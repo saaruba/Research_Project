@@ -1,0 +1,3 @@
+[submodule "src/tiago_social_worlds/models/actors/LIRS-HMLG"]
+	path = src/tiago_social_worlds/models/actors/LIRS-HMLG
+	url = https://gitlab.com/LIRS_Projects_archives/LIRS-HMLG.git
