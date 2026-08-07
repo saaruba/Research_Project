@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="3">
+
+  <name>tiago_social_worlds</name>
+  <version>0.1.0</version>
+
+  <description>
+    Custom Gazebo Classic restaurant and party hall simulation
+    environments for socially aware navigation using the TIAGo robot.
+  </description>
+
+  <maintainer email="saaru@todo.todo">Saaru</maintainer>
+  <license>Apache-2.0</license>
+
+  <!-- Build system used for this resource and launch package. -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Runtime dependencies used by the Python launch files. -->
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>gazebo_ros</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>

@@ -50,3 +50,8 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+# Temporary exclusions for staged GitHub upload
+dataset/
+Research_Project_backup_*.tar
+Research_Project_backup_*.tar.gz
