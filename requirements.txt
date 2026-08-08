@@ -1,0 +1,111 @@
+# ============================================================================
+# TIAGo Group-Approach Project - main data pipeline requirements
+#
+#   Learning Socially Appropriate Group-Approach Behaviour for a TIAGo Robot
+#   from Non-Expert Human Demonstrations
+#
+# Install:
+#     pip install -r requirements.txt
+#
+# Verified working on Python 3.10.12 (Ubuntu 22.04 / ROS 2 Humble container).
+# Versions are pinned exactly so results are reproducible - this repo is a
+# dissertation artifact, and a marker re-running it should get the same
+# numbers, not whatever the latest release happens to do.
+#
+# ----------------------------------------------------------------------------
+# THREE THINGS THIS FILE DELIBERATELY DOES NOT INSTALL - read before debugging
+# ----------------------------------------------------------------------------
+#
+# 1. ROS 2 PACKAGES (rclpy, nav2_msgs, tf2_ros, geometry_msgs, control_msgs,
+#    trajectory_msgs, sensor_msgs, ament_index_python, launch, launch_ros,
+#    gazebo_ros).
+#    These are NOT on PyPI and CANNOT be pip-installed. They come from the
+#    ROS 2 Humble system installation and are already present inside the
+#    project's devcontainer. `pip install rclpy` will either fail or install
+#    an unrelated package - do not try it. Only src/tiago_head_control and
+#    src/tiago_group_approach need them, and those are built with colcon:
+#        colcon build --packages-select tiago_group_approach
+#
+# 2. LOCATEANYTHING-3B (torch, transformers, peft, decord, lmdb).
+#    Kept out on purpose: it pins numpy==1.25.0, which directly conflicts
+#    with the numpy 2.x that pandas/scikit-learn need here. Installing both
+#    in one environment breaks the data pipeline. Use a SEPARATE virtual
+#    environment and requirements-locateanything.txt instead.
+#
+# 3. matplotlib / scipy.
+#    Referenced in some older script comments but not actually imported by
+#    any script in this repo (verified). Left out to keep the install lean
+#    and to avoid re-triggering the numpy/scipy ABI conflicts hit earlier in
+#    the project. Add them manually only if you write new plotting code.
+# ============================================================================
+
+
+# --- Core data handling -----------------------------------------------------
+# Used by essentially every script in scripts/.
+numpy==2.2.6
+pandas==2.3.3
+
+
+# --- Machine learning -------------------------------------------------------
+# Random Forest + MLP approach-pose models, grid search, and model
+# serialisation.
+#   train_baseline_model.py, train_social_baseline_model.py,
+#   train_approach_pose_model.py, train_approach_pose_mlp.py,
+#   grid_search_approach_pose.py, evaluate_approach_pose.py
+scikit-learn==1.7.2
+joblib==1.5.3
+
+
+# --- Video / image processing -----------------------------------------------
+# Reading session .mp4 files, drawing detection overlays, exporting frames.
+#   extract_person_detections.py, prepare_ospace_validation.py,
+#   export_detector_comparison_frames.py, test_person_detector.py
+#
+# NOTE: use the headless build on servers/containers without a display.
+# If you need cv2.imshow() windows locally, swap this for
+# `opencv-python==4.13.0.92` - install ONE of them, never both, or they
+# will shadow each other and produce confusing import errors.
+opencv-python-headless==4.13.0.92
+
+
+# --- Person detection (YOLOv8n) ---------------------------------------------
+# This is the project's adopted perception model (99.7% recall on the
+# sessions 1/3 ground truth vs. the proposal's 80% target).
+#   extract_person_detections.py, test_person_detector.py,
+#   validate_detector_recall.py
+#
+# WARNING - INSTALL SIZE. ultralytics depends on PyTorch, and on Linux pip
+# resolves that to the CUDA build, which drags in the whole NVIDIA stack
+# (cuBLAS, cuDNN, NCCL, cuFFT, ...). Verified by dry-run: that is roughly
+# 3-4 GB and the slowest part of the install by a wide margin.
+#
+# You very likely do NOT need it. Person detection has already been run
+# across all 24 sessions and cached to detected_people.csv and
+# detected_people_individual.csv, so every downstream step (clustering,
+# O-space, training, evaluation) works without ultralytics installed at all.
+# It is only required to RE-RUN perception from scratch.
+#
+# Two ways to avoid the multi-GB download:
+#
+#   (a) Skip it entirely - comment out the line below. Everything except
+#       extract_person_detections.py / test_person_detector.py still runs.
+#
+#   (b) Install the CPU-only PyTorch first (~200 MB instead of ~4 GB), then
+#       this file. YOLOv8n is small and runs fine on CPU:
+#           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#           pip install -r requirements.txt
+ultralytics>=8.3.0,<9.0
+
+
+# --- ROS 1 bag reading ------------------------------------------------------
+# The PLUS-HRI dataset bags are ROS 1 format, read here from Python without a
+# ROS 1 installation (needs the ROS1_NOETIC typestore - see the fix already
+# applied in extract_training_table.py).
+#   extract_training_table.py, inspect_dataset_session.py
+rosbags==0.11.3
+
+
+# --- Image loading ----------------------------------------------------------
+# Pillow is pulled in transitively by ultralytics, but is pinned explicitly
+# because run_locateanything_comparison.py imports PIL directly.
+Pillow==12.2.0

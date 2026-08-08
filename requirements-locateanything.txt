@@ -1,0 +1,74 @@
+# ============================================================================
+# LocateAnything-3B requirements - SEPARATE ENVIRONMENT, GPU MACHINE ONLY
+#
+# ############################################################################
+# #  DO NOT INSTALL THIS INTO THE SAME ENVIRONMENT AS requirements.txt       #
+# #                                                                          #
+# #  LocateAnything-3B pins numpy==1.25.0. The main data pipeline needs      #
+# #  numpy 2.x for pandas/scikit-learn. Installing both together WILL break  #
+# #  the pipeline with ABI errors in scipy/sklearn - this already happened   #
+# #  once in this project and cost real debugging time.                      #
+# ############################################################################
+#
+# Create a dedicated virtual environment first:
+#
+#     python3 -m venv la3b_env
+#     source la3b_env/bin/activate            # Windows: la3b_env\Scripts\activate
+#     pip install -r requirements-locateanything.txt
+#
+#     # Then install PyTorch SEPARATELY, matching your CUDA version.
+#     # It is not pinned here because the correct wheel depends on your GPU
+#     # drivers - get the exact command from https://pytorch.org/get-started/locally/
+#     pip install torch
+#
+# ----------------------------------------------------------------------------
+# WHAT THIS IS FOR - scope it honestly
+# ----------------------------------------------------------------------------
+# Objective 2 is ALREADY SATISFIED: YOLOv8n measured 99.7% recall against the
+# sessions 1/3 ground truth, versus the proposal's >= 80% target. There is
+# 0.3% of headroom, so LocateAnything-3B CANNOT meaningfully improve it, and
+# it will not change any downstream result - every group, O-space estimate,
+# training table and model in this project is already built on cached
+# detections.
+#
+# The only purpose is evidential: the proposal names nvidia/LocateAnything-3B
+# as the intended perception model, and this project substituted YOLOv8n
+# (a substitution the proposal's own risk table permits). Running a measured
+# head-to-head makes that justification much stronger in a viva than citing
+# installation difficulty.
+#
+# Also note: LocateAnything-3B is used for INFERENCE ONLY. Nothing is trained
+# here. Neither detector in this project is trained - both are pretrained
+# models being applied to the dataset.
+#
+# Workflow:
+#   1. On the project machine (no GPU needed):
+#        python3 scripts/export_detector_comparison_frames.py
+#   2. Copy dataset/processed/detector_comparison/ to the GPU machine.
+#   3. In this environment, on the GPU machine:
+#        python3 scripts/run_locateanything_comparison.py \
+#            --frames-dir /path/to/detector_comparison
+#   4. Copy the updated comparison_manifest.csv back into the project.
+# ============================================================================
+
+
+# --- Pinned exactly as required by the nvidia/LocateAnything-3B model card ---
+numpy==1.25.0
+transformers==4.57.1
+Pillow==11.1.0
+opencv-python-headless==4.11.0.86
+decord==0.6.0
+lmdb==1.7.5
+peft
+torchvision
+
+
+# --- Needed by run_locateanything_comparison.py to read/write the manifest --
+# Any 2.x pandas works here; it is only used for simple CSV I/O, and is left
+# unpinned so pip can resolve a version compatible with numpy 1.25.0.
+pandas
+
+
+# --- NOT listed here on purpose --------------------------------------------
+# torch: install separately with the wheel matching your CUDA version.
+#        See the pytorch.org link above.
