@@ -55,3 +55,9 @@ CATKIN_IGNORE
 dataset/
 Research_Project_backup_*.tar
 Research_Project_backup_*.tar.gz
+
+# Large files kept separately
+models/
+dataset/
+Research_Project_backup_*.tar
+Research_Project_backup_*.tar.gz

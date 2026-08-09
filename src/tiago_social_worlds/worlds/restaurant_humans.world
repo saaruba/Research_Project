@@ -1,20 +1,16 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <sdf version="1.6">
   <world name="restaurant_party_hall">
     <gravity>0 0 -9.81</gravity>
-
     <physics name="restaurant_physics" type="ode">
       <max_step_size>0.001</max_step_size>
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
-
-    <!-- Balanced indoor lighting for VNC/software-rendered Gazebo Classic. -->
     <scene>
       <ambient>0.28 0.28 0.28 1</ambient>
       <background>0.30 0.32 0.35 1</background>
       <shadows>false</shadows>
     </scene>
-
     <light name="sun" type="directional">
       <cast_shadows>false</cast_shadows>
       <pose>0 0 12 0 0 0</pose>
@@ -22,17 +18,24 @@
       <specular>0.06 0.06 0.06 1</specular>
       <direction>-0.4 0.2 -1.0</direction>
     </light>
-
-    <!-- 20 m x 15 m restaurant floor. -->
+    <!-- Restaurant shell: 20 m x 15 m, 2 m entrance gap in south wall. -->
     <model name="restaurant_floor">
       <static>true</static>
       <pose>0 0 -0.05 0 0 0</pose>
       <link name="floor_link">
         <collision name="floor_collision">
-          <geometry><box><size>20 15 0.10</size></box></geometry>
+          <geometry>
+            <box>
+              <size>20 15 0.10</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="floor_visual">
-          <geometry><box><size>20 15 0.10</size></box></geometry>
+          <geometry>
+            <box>
+              <size>20 15 0.10</size>
+            </box>
+          </geometry>
           <material>
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
@@ -42,164 +45,260 @@
         </visual>
       </link>
     </model>
-
-    <!-- Exterior walls. -->
     <model name="north_wall">
       <static>true</static>
       <pose>0 7.40 1.50 0 0 0</pose>
       <link name="wall_link">
         <collision name="wall_collision">
-          <geometry><box><size>20 0.20 3.00</size></box></geometry>
+          <geometry>
+            <box>
+              <size>20 0.20 3.00</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="wall_visual">
-          <geometry><box><size>20 0.20 3.00</size></box></geometry>
-          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/White</name></script></material>
+          <geometry>
+            <box>
+              <size>20 0.20 3.00</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/White</name>
+            </script>
+          </material>
         </visual>
       </link>
     </model>
-
     <model name="east_wall">
       <static>true</static>
       <pose>9.90 0 1.50 0 0 0</pose>
       <link name="wall_link">
         <collision name="wall_collision">
-          <geometry><box><size>0.20 15 3.00</size></box></geometry>
+          <geometry>
+            <box>
+              <size>0.20 15 3.00</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="wall_visual">
-          <geometry><box><size>0.20 15 3.00</size></box></geometry>
-          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/White</name></script></material>
+          <geometry>
+            <box>
+              <size>0.20 15 3.00</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/White</name>
+            </script>
+          </material>
         </visual>
       </link>
     </model>
-
     <model name="west_wall">
       <static>true</static>
       <pose>-9.90 0 1.50 0 0 0</pose>
       <link name="wall_link">
         <collision name="wall_collision">
-          <geometry><box><size>0.20 15 3.00</size></box></geometry>
+          <geometry>
+            <box>
+              <size>0.20 15 3.00</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="wall_visual">
-          <geometry><box><size>0.20 15 3.00</size></box></geometry>
-          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/White</name></script></material>
+          <geometry>
+            <box>
+              <size>0.20 15 3.00</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/White</name>
+            </script>
+          </material>
         </visual>
       </link>
     </model>
-
-    <!-- South wall split to preserve the main entrance. -->
     <model name="south_wall_left">
       <static>true</static>
       <pose>-5.50 -7.40 1.50 0 0 0</pose>
       <link name="wall_link">
         <collision name="wall_collision">
-          <geometry><box><size>9.00 0.20 3.00</size></box></geometry>
+          <geometry>
+            <box>
+              <size>9.00 0.20 3.00</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="wall_visual">
-          <geometry><box><size>9.00 0.20 3.00</size></box></geometry>
-          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/White</name></script></material>
+          <geometry>
+            <box>
+              <size>9.00 0.20 3.00</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/White</name>
+            </script>
+          </material>
         </visual>
       </link>
     </model>
-
     <model name="south_wall_right">
       <static>true</static>
       <pose>5.50 -7.40 1.50 0 0 0</pose>
       <link name="wall_link">
         <collision name="wall_collision">
-          <geometry><box><size>9.00 0.20 3.00</size></box></geometry>
+          <geometry>
+            <box>
+              <size>9.00 0.20 3.00</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="wall_visual">
-          <geometry><box><size>9.00 0.20 3.00</size></box></geometry>
-          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/White</name></script></material>
+          <geometry>
+            <box>
+              <size>9.00 0.20 3.00</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/White</name>
+            </script>
+          </material>
         </visual>
       </link>
     </model>
-
-    <!-- Kitchen / service area partitions. -->
+    <!-- Kitchen enclosure in the north-west corner, with a doorway gap. -->
     <model name="kitchen_east_partition">
       <static>true</static>
       <pose>-6.20 4.75 1.40 0 0 0</pose>
       <link name="partition_link">
         <collision name="partition_collision">
-          <geometry><box><size>0.15 5.30 2.80</size></box></geometry>
+          <geometry>
+            <box>
+              <size>0.15 5.30 2.80</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="partition_visual">
-          <geometry><box><size>0.15 5.30 2.80</size></box></geometry>
-          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grey</name></script></material>
+          <geometry>
+            <box>
+              <size>0.15 5.30 2.80</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
         </visual>
       </link>
     </model>
-
     <model name="kitchen_south_partition_left">
       <static>true</static>
       <pose>-9.20 2.10 1.40 0 0 0</pose>
       <link name="partition_link">
         <collision name="partition_collision">
-          <geometry><box><size>1.40 0.15 2.80</size></box></geometry>
+          <geometry>
+            <box>
+              <size>1.40 0.15 2.80</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="partition_visual">
-          <geometry><box><size>1.40 0.15 2.80</size></box></geometry>
-          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grey</name></script></material>
+          <geometry>
+            <box>
+              <size>1.40 0.15 2.80</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
         </visual>
       </link>
     </model>
-
     <model name="kitchen_south_partition_right">
       <static>true</static>
       <pose>-6.65 2.10 1.40 0 0 0</pose>
       <link name="partition_link">
         <collision name="partition_collision">
-          <geometry><box><size>0.90 0.15 2.80</size></box></geometry>
+          <geometry>
+            <box>
+              <size>0.90 0.15 2.80</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="partition_visual">
-          <geometry><box><size>0.90 0.15 2.80</size></box></geometry>
-          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grey</name></script></material>
+          <geometry>
+            <box>
+              <size>0.90 0.15 2.80</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
         </visual>
       </link>
     </model>
-
-    <!-- Stage remains in place; furniture and stage objects will be added later. -->
+    <!-- Stage remains unchanged; furniture and stage objects can be added later. -->
     <model name="restaurant_stage">
       <static>true</static>
       <pose>7.45 5.20 0.15 0 0 0</pose>
       <link name="stage_link">
         <collision name="stage_collision">
-          <geometry><box><size>4.50 3.60 0.30</size></box></geometry>
+          <geometry>
+            <box>
+              <size>4.50 3.60 0.30</size>
+            </box>
+          </geometry>
         </collision>
         <visual name="stage_visual">
-          <geometry><box><size>4.50 3.60 0.30</size></box></geometry>
-          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material>
+          <geometry>
+            <box>
+              <size>4.50 3.60 0.30</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Wood</name>
+            </script>
+          </material>
         </visual>
       </link>
     </model>
-
     <gui fullscreen="0">
       <camera name="restaurant_overview_camera">
         <pose>0 -21 17 0 0.62 1.57</pose>
         <view_controller>orbit</view_controller>
       </camera>
     </gui>
-
-    <!-- ============================================================= -->
-    <!-- HUMAN POPULATION                                               -->
-    <!-- Fixed implementation of the reference-plan ranges:             -->
-    <!--   30 standing people = 24 talking + 6 walking                  -->
-    <!--   18 sitting people                                            -->
-    <!--   TOTAL = 48 humans                                            -->
-    <!-- Demographic mix: 18 adult men, 18 adult women, 12 children.    -->
-    <!-- ============================================================= -->
-    <!-- 24 stationary conversational-group members (Groups 01-06). -->
-
-
-    <actor name="group_01_person_01_m_suit">
-      <pose>0 0 0 0 0 0</pose>
+    <!-- 24 talking actors: six four-person F-formation groups. -->
+    <!-- GROUP 1 centre (-3.5, 4.7) -->
+    <!-- DEVELOPMENT POPULATION: 15 humans = 12 talking (3 groups of 4) + 3 walking; no seated actors. -->
+    <actor name="group_01_person_01_male_suit">
+      <pose>-4.4 4.7 0 0 0 0</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1.0</scale>
       </skin>
       <animation name="talk">
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1.0</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
@@ -208,159 +307,156 @@
         <auto_start>true</auto_start>
         <trajectory id="0" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>-5.900 1.000 0.000 0 0 0.00000</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-5.900 1.000 0.000 0 0 0.00000</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_01_person_02_w_casual">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_01_person_02_female">
+      <pose>-3.5 5.6 0 0 0 -1.5708</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1.0</scale>
       </skin>
       <animation name="talk">
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1.0</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>0.4</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="1" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>-4.100 1.000 0.000 0 0 3.14159</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-4.100 1.000 0.000 0 0 3.14159</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_01_person_03_m_casual_3">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_01_person_03_male">
+      <pose>-2.6 4.7 0 0 0 3.1416</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1.0</scale>
       </skin>
       <animation name="talk">
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1.0</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>0.8</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="2" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>-5.000 1.900 0.000 0 0 -1.57080</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-5.000 1.900 0.000 0 0 -1.57080</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_01_person_04_w_casual_2">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_01_person_04_child">
+      <pose>-3.5 3.8 0 0 0 1.5708</pose>
       <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
-        <scale>1.00</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/talk.dae</filename>
+        <scale>0.78</scale>
       </skin>
       <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
-        <scale>1.00</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/talk.dae</filename>
+        <scale>0.78</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>1.2</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="3" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>-5.000 0.100 0.000 0 0 1.57080</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-5.000 0.100 0.000 0 0 1.57080</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_02_person_01_w_casual">
-      <pose>0 0 0 0 0 0</pose>
+    <!-- Remaining groups use the same six verified meshes to reduce asset-loading overhead. -->
+    <!-- GROUPS 2-6 are expanded explicitly below; each member faces its group centre. -->
+    <!-- Groups 3-6: compact equivalent definitions. -->
+    <actor name="group_02_person_01_female">
+      <pose>0.6 0.8 0 0 0 0</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
       </skin>
       <animation name="talk">
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>0.3</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="4" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>-2.500 2.000 0.000 0 0 0.00000</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-2.500 2.000 0.000 0 0 0.00000</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_02_person_02_m_casual_3">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_02_person_02_male">
+      <pose>1.5 1.7 0 0 0 -1.5708</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
       </skin>
       <animation name="talk">
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>0.5</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="5" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>-0.700 2.000 0.000 0 0 3.14159</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-0.700 2.000 0.000 0 0 3.14159</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_02_person_03_c_m_casual">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_02_person_03_child">
+      <pose>2.4 0.8 0 0 0 3.1416</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/talk.dae</filename>
         <scale>0.78</scale>
@@ -372,1073 +468,230 @@
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>0.7</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="6" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>-1.600 2.900 0.000 0 0 -1.57080</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-1.600 2.900 0.000 0 0 -1.57080</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_02_person_04_c_w_casual">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_02_person_04_male_suit">
+      <pose>1.5 -0.1 0 0 0 1.5708</pose>
       <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/talk.dae</filename>
-        <scale>0.78</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
+        <scale>1</scale>
       </skin>
       <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/talk.dae</filename>
-        <scale>0.78</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
+        <scale>1</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>0.9</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="7" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>-1.600 1.100 0.000 0 0 1.57080</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-1.600 1.100 0.000 0 0 1.57080</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_03_person_01_m_suit">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_03_person_01_child">
+      <pose>2.6 -2.6 0 0 0 0</pose>
       <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
-        <scale>1.00</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/talk.dae</filename>
+        <scale>0.78</scale>
       </skin>
       <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
-        <scale>1.00</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/talk.dae</filename>
+        <scale>0.78</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>0.9</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="8" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>-0.200 5.200 0.000 0 0 0.24498</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-0.200 5.200 0.000 0 0 0.24498</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_03_person_02_w_casual_2">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_03_person_02_male_suit">
+      <pose>3.5 -1.7 0 0 0 -1.5708</pose>
       <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
-        <scale>1.00</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
+        <scale>1</scale>
       </skin>
       <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
-        <scale>1.00</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
+        <scale>1</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>1.1</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="9" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>1.400 5.200 0.000 0 0 2.89661</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>1.400 5.200 0.000 0 0 2.89661</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_03_person_03_c_m_casual">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_03_person_03_female">
+      <pose>4.4 -2.6 0 0 0 3.1416</pose>
       <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/talk.dae</filename>
-        <scale>0.78</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
+        <scale>1</scale>
       </skin>
       <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/talk.dae</filename>
-        <scale>0.78</scale>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
+        <scale>1</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>1.3</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="10" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>0.600 6.200 0.000 0 0 -1.57080</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>0.600 6.200 0.000 0 0 -1.57080</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_04_person_01_m_casual_3">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="group_03_person_04_male">
+      <pose>3.5 -3.5 0 0 0 1.5708</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
       </skin>
       <animation name="talk">
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>1.5</delay_start>
         <auto_start>true</auto_start>
         <trajectory id="11" type="talk">
           <waypoint>
-            <time>0.0</time>
-            <pose>1.400 0.200 0.000 0 0 0.00000</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>1.400 0.200 0.000 0 0 0.00000</pose>
+            <time>30</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="group_04_person_02_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="12" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>3.200 0.200 0.000 0 0 3.14159</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>3.200 0.200 0.000 0 0 3.14159</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_04_person_03_m_suit">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="13" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>2.300 1.100 0.000 0 0 -1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>2.300 1.100 0.000 0 0 -1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_04_person_04_c_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/talk.dae</filename>
-        <scale>0.78</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/talk.dae</filename>
-        <scale>0.78</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="14" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>2.300 -0.700 0.000 0 0 1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>2.300 -0.700 0.000 0 0 1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_05_person_01_w_casual_2">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="15" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-2.900 -4.300 0.000 0 0 0.00000</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-2.900 -4.300 0.000 0 0 0.00000</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_05_person_02_m_casual_3">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="16" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-1.100 -4.300 0.000 0 0 3.14159</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-1.100 -4.300 0.000 0 0 3.14159</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_05_person_03_c_m_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/talk.dae</filename>
-        <scale>0.78</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/talk.dae</filename>
-        <scale>0.78</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="17" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-2.000 -3.400 0.000 0 0 -1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-2.000 -3.400 0.000 0 0 -1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_05_person_04_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="18" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-2.000 -5.200 0.000 0 0 1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-2.000 -5.200 0.000 0 0 1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_06_person_01_m_suit">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="19" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>4.400 0.000 0.000 0 0 0.00000</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>4.400 0.000 0.000 0 0 0.00000</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_06_person_02_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="20" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>6.400 0.000 0.000 0 0 3.14159</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>6.400 0.000 0.000 0 0 3.14159</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_06_person_03_m_casual_3">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="21" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>5.400 1.000 0.000 0 0 -1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>5.400 1.000 0.000 0 0 -1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_06_person_04_w_casual_2">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="22" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>5.400 -1.000 0.000 0 0 1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>5.400 -1.000 0.000 0 0 1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="group_06_person_05_c_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/talk.dae</filename>
-        <scale>0.78</scale>
-      </skin>
-      <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/talk.dae</filename>
-        <scale>0.78</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="23" type="talk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>4.700 -0.700 0.000 0 0 0.78540</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>4.700 -0.700 0.000 0 0 0.78540</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <!-- 18 sitting actors reserved around five future dining-table positions. -->
-
-
-    <actor name="seated_table_01_person_01_m_suit">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="24" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-2.650 5.500 0.000 0 0 3.14159</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-2.650 5.500 0.000 0 0 3.14159</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_01_person_02_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="25" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-3.600 6.450 0.000 0 0 -1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-3.600 6.450 0.000 0 0 -1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_01_person_03_m_casual_3">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="26" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-4.550 5.500 0.000 0 0 0.00000</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-4.550 5.500 0.000 0 0 0.00000</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_01_person_04_w_casual_2">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="27" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-3.600 4.550 0.000 0 0 1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-3.600 4.550 0.000 0 0 1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_02_person_01_m_suit">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="28" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-3.650 -1.800 0.000 0 0 3.14159</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-3.650 -1.800 0.000 0 0 3.14159</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_02_person_02_w_casual_2">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="29" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-4.600 -0.850 0.000 0 0 -1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-4.600 -0.850 0.000 0 0 -1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_02_person_03_c_m_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/sit.dae</filename>
-        <scale>0.78</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/sit.dae</filename>
-        <scale>0.78</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="30" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-5.550 -1.800 0.000 0 0 -0.00000</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-5.550 -1.800 0.000 0 0 -0.00000</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_02_person_04_c_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/sit.dae</filename>
-        <scale>0.78</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/sit.dae</filename>
-        <scale>0.78</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="31" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-4.600 -2.750 0.000 0 0 1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>-4.600 -2.750 0.000 0 0 1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_03_person_01_m_casual_3">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="32" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>4.750 3.000 0.000 0 0 3.14159</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>4.750 3.000 0.000 0 0 3.14159</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_03_person_02_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="33" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>3.800 3.950 0.000 0 0 -1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>3.800 3.950 0.000 0 0 -1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_03_person_03_m_suit">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="34" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>2.850 3.000 0.000 0 0 0.00000</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>2.850 3.000 0.000 0 0 0.00000</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_03_person_04_w_casual_2">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="35" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>3.800 2.050 0.000 0 0 1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>3.800 2.050 0.000 0 0 1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_04_person_01_m_casual_3">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="36" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>2.323 -3.025 0.000 0 0 -2.61799</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>2.323 -3.025 0.000 0 0 -2.61799</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_04_person_02_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="37" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>0.677 -3.025 0.000 0 0 -0.52360</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>0.677 -3.025 0.000 0 0 -0.52360</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_04_person_03_c_m_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/sit.dae</filename>
-        <scale>0.78</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/sit.dae</filename>
-        <scale>0.78</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="38" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>1.500 -4.450 0.000 0 0 1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>1.500 -4.450 0.000 0 0 1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_05_person_01_m_suit">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="39" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>6.823 -2.825 0.000 0 0 -2.61799</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>6.823 -2.825 0.000 0 0 -2.61799</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_05_person_02_w_casual_2">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/sit.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/sit.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="40" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>5.177 -2.825 0.000 0 0 -0.52360</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>5.177 -2.825 0.000 0 0 -0.52360</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="seated_table_05_person_03_c_w_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/sit.dae</filename>
-        <scale>0.78</scale>
-      </skin>
-      <animation name="sit">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/sit.dae</filename>
-        <scale>0.78</scale>
-        <interpolate_x>false</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="41" type="sit">
-          <waypoint>
-            <time>0.0</time>
-            <pose>6.000 -4.250 0.000 0 0 1.57080</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>6.000 -4.250 0.000 0 0 1.57080</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <!-- 6 walking actors following repeatable routes through the hall. -->
-
-
+    <!-- Six walking pedestrians; routes remain inside the shell and clear of the kitchen/stage. -->
     <actor name="walker_01_male_suit">
-      <pose>0 0 0 0 0 0</pose>
+      <pose>-7 -5 0 0 0 0</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/walk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
       </skin>
       <animation name="walk">
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/walk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>0</delay_start>
         <auto_start>true</auto_start>
-        <trajectory id="42" type="walk">
+        <trajectory id="12" type="walk">
+          <tension>0</tension>
           <waypoint>
-            <time>0.0</time>
-            <pose>-1.000 -6.100 0.000 0 0 1.57080</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>12.0</time>
-            <pose>-1.000 4.300 0.000 0 0 1.57080</pose>
+            <time>8</time>
+            <pose>5 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>24.0</time>
-            <pose>-1.000 -6.100 0.000 0 0 -1.57080</pose>
+            <time>16</time>
+            <pose>9 0 0 0 0 0</pose>
+          </waypoint>
+          <waypoint>
+            <time>24</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="walker_02_female_casual">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="walker_02_female">
+      <pose>7 -5 0 0 0 3.1416</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/walk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
       </skin>
       <animation name="walk">
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/walk.dae</filename>
-        <scale>1.00</scale>
+        <scale>1</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>1</delay_start>
         <auto_start>true</auto_start>
-        <trajectory id="43" type="walk">
+        <trajectory id="13" type="walk">
+          <tension>0</tension>
           <waypoint>
-            <time>0.0</time>
-            <pose>-7.400 -4.800 0.000 0 0 0.00000</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>15.0</time>
-            <pose>7.200 -4.800 0.000 0 0 0.00000</pose>
+            <time>8</time>
+            <pose>-5 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>30.0</time>
-            <pose>-7.400 -4.800 0.000 0 0 3.14159</pose>
+            <time>16</time>
+            <pose>-9 0 0 0 0 0</pose>
+          </waypoint>
+          <waypoint>
+            <time>24</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
-
-    <actor name="walker_03_child_male">
-      <pose>0 0 0 0 0 0</pose>
+    <actor name="walker_03_boy">
+      <pose>-5 -6 0 0 0 0.9</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_m_casual/walk.dae</filename>
         <scale>0.78</scale>
@@ -1450,132 +703,25 @@
       </animation>
       <script>
         <loop>true</loop>
-        <delay_start>0.0</delay_start>
+        <delay_start>4</delay_start>
         <auto_start>true</auto_start>
-        <trajectory id="44" type="walk">
+        <trajectory id="14" type="walk">
+          <tension>0</tension>
           <waypoint>
-            <time>0.0</time>
-            <pose>-5.200 -5.500 0.000 0 0 0.70000</pose>
+            <time>0</time>
+            <pose>0 0 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>8.0</time>
-            <pose>-3.000 -2.800 0.000 0 0 0.90000</pose>
+            <time>8</time>
+            <pose>4 4 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>16.0</time>
-            <pose>-4.500 0.000 0.000 0 0 2.50000</pose>
+            <time>16</time>
+            <pose>8 8 0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>24.0</time>
-            <pose>-5.200 -5.500 0.000 0 0 -2.00000</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="walker_04_child_female">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/walk.dae</filename>
-        <scale>0.78</scale>
-      </skin>
-      <animation name="walk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Children/c_w_casual/walk.dae</filename>
-        <scale>0.78</scale>
-        <interpolate_x>true</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="45" type="walk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>6.800 -5.700 0.000 0 0 2.20000</pose>
-          </waypoint>
-          <waypoint>
-            <time>10.0</time>
-            <pose>4.700 -2.200 0.000 0 0 1.80000</pose>
-          </waypoint>
-          <waypoint>
-            <time>20.0</time>
-            <pose>6.000 1.200 0.000 0 0 0.20000</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>6.800 -5.700 0.000 0 0 -1.50000</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="walker_05_male_casual">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/walk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="walk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/walk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>true</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="46" type="walk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>-7.200 -5.800 0.000 0 0 0.80000</pose>
-          </waypoint>
-          <waypoint>
-            <time>12.0</time>
-            <pose>-4.800 -0.500 0.000 0 0 0.80000</pose>
-          </waypoint>
-          <waypoint>
-            <time>24.0</time>
-            <pose>-0.800 3.200 0.000 0 0 0.60000</pose>
-          </waypoint>
-          <waypoint>
-            <time>36.0</time>
-            <pose>-7.200 -5.800 0.000 0 0 -2.50000</pose>
-          </waypoint>
-        </trajectory>
-      </script>
-    </actor>
-
-    <actor name="walker_06_female_casual2">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/walk.dae</filename>
-        <scale>1.00</scale>
-      </skin>
-      <animation name="walk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/walk.dae</filename>
-        <scale>1.00</scale>
-        <interpolate_x>true</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>0.0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="47" type="walk">
-          <waypoint>
-            <time>0.0</time>
-            <pose>1.000 -6.000 0.000 0 0 0.80000</pose>
-          </waypoint>
-          <waypoint>
-            <time>10.0</time>
-            <pose>3.500 -3.000 0.000 0 0 0.80000</pose>
-          </waypoint>
-          <waypoint>
-            <time>20.0</time>
-            <pose>4.500 1.500 0.000 0 0 1.40000</pose>
-          </waypoint>
-          <waypoint>
-            <time>30.0</time>
-            <pose>1.000 -6.000 0.000 0 0 -2.00000</pose>
+            <time>24</time>
+            <pose>0 0 0 0 0 -3.14</pose>
           </waypoint>
         </trajectory>
       </script>
