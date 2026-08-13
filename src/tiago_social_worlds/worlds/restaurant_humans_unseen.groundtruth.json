@@ -1,0 +1,90 @@
+{
+  "scenario": "unseen",
+  "world_file": "restaurant_humans_unseen.world",
+  "groups": [
+    {
+      "group_id": 0,
+      "centre_x": 3.0,
+      "centre_y": 2.5,
+      "radius": 0.85,
+      "num_people": 4,
+      "ospace_radius": 0.85,
+      "members": [
+        {
+          "name": "person_g0_p0",
+          "x": 3.85,
+          "y": 2.5,
+          "yaw": 3.1416
+        },
+        {
+          "name": "person_g0_p1",
+          "x": 3.0,
+          "y": 3.35,
+          "yaw": -1.5708
+        },
+        {
+          "name": "person_g0_p2",
+          "x": 2.15,
+          "y": 2.5,
+          "yaw": -0.0
+        },
+        {
+          "name": "person_g0_p3",
+          "x": 3.0,
+          "y": 1.65,
+          "yaw": 1.5708
+        }
+      ]
+    },
+    {
+      "group_id": 1,
+      "centre_x": 0.0,
+      "centre_y": -2.5,
+      "radius": 0.7,
+      "num_people": 3,
+      "ospace_radius": 0.7,
+      "members": [
+        {
+          "name": "person_g1_p0",
+          "x": 0.7,
+          "y": -2.5,
+          "yaw": 3.1416
+        },
+        {
+          "name": "person_g1_p1",
+          "x": -0.35,
+          "y": -1.894,
+          "yaw": -1.0472
+        },
+        {
+          "name": "person_g1_p2",
+          "x": -0.35,
+          "y": -3.106,
+          "yaw": 1.0472
+        }
+      ]
+    },
+    {
+      "group_id": 2,
+      "centre_x": -2.5,
+      "centre_y": 1.0,
+      "radius": 0.55,
+      "num_people": 2,
+      "ospace_radius": 0.55,
+      "members": [
+        {
+          "name": "person_g2_p0",
+          "x": -1.95,
+          "y": 1.0,
+          "yaw": 3.1416
+        },
+        {
+          "name": "person_g2_p1",
+          "x": -3.05,
+          "y": 1.0,
+          "yaw": -0.0
+        }
+      ]
+    }
+  ]
+}

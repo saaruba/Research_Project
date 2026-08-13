@@ -1,0 +1,56 @@
+{
+  "scenario": "default",
+  "world_file": "restaurant_humans.world",
+  "groups": [
+    {
+      "group_id": 0,
+      "centre_x": 2.5,
+      "centre_y": 0.0,
+      "radius": 0.7,
+      "num_people": 3,
+      "ospace_radius": 0.7,
+      "members": [
+        {
+          "name": "person_g0_p0",
+          "x": 3.2,
+          "y": 0.0,
+          "yaw": 3.1416
+        },
+        {
+          "name": "person_g0_p1",
+          "x": 2.15,
+          "y": 0.606,
+          "yaw": -1.0472
+        },
+        {
+          "name": "person_g0_p2",
+          "x": 2.15,
+          "y": -0.606,
+          "yaw": 1.0472
+        }
+      ]
+    },
+    {
+      "group_id": 1,
+      "centre_x": -1.5,
+      "centre_y": 2.0,
+      "radius": 0.6,
+      "num_people": 2,
+      "ospace_radius": 0.6,
+      "members": [
+        {
+          "name": "person_g1_p0",
+          "x": -0.9,
+          "y": 2.0,
+          "yaw": 3.1416
+        },
+        {
+          "name": "person_g1_p1",
+          "x": -2.1,
+          "y": 2.0,
+          "yaw": -0.0
+        }
+      ]
+    }
+  ]
+}

@@ -10,15 +10,37 @@
 # #  once in this project and cost real debugging time.                      #
 # ############################################################################
 #
-# Create a dedicated virtual environment first:
+# ---------------------------------------------------------------------------
+# STOP. CHECK THE VENV WAS ACTUALLY CREATED BEFORE YOU pip install.
+# ---------------------------------------------------------------------------
+# On the ROS 2 devcontainer, `python3 -m venv` FAILS because python3.10-venv
+# is not installed. It prints an error but the shell keeps going, so the next
+# `pip install` silently lands in your USER site-packages (~/.local) and
+# downgrades numpy to 1.25.0 - which breaks pandas / scikit-learn /
+# opencv-python for the whole data pipeline. This has already happened once.
 #
+# Use scripts/setup_locateanything.sh, which checks for this and refuses to
+# continue if the venv is missing. Or, manually:
+#
+#     # 1. Install the venv module (once):
+#     sudo apt update && sudo apt install -y python3.10-venv
+#     # ...or, if you have no sudo:
+#     #     pip install --user virtualenv && python3 -m virtualenv la3b_env
+#
+#     # 2. Create and activate:
 #     python3 -m venv la3b_env
-#     source la3b_env/bin/activate            # Windows: la3b_env\Scripts\activate
+#     source la3b_env/bin/activate             # Windows: la3b_env\Scripts\activate
+#
+#     # 3. VERIFY you are inside it - this MUST print a path ending in
+#     #    la3b_env, not /usr/bin/python3 or ~/.local:
+#     which python3
+#
+#     # 4. Only now:
 #     pip install -r requirements-locateanything.txt
 #
-#     # Then install PyTorch SEPARATELY, matching your CUDA version.
-#     # It is not pinned here because the correct wheel depends on your GPU
-#     # drivers - get the exact command from https://pytorch.org/get-started/locally/
+#     # 5. Then install PyTorch SEPARATELY, matching your CUDA version.
+#     # Not pinned here because the correct wheel depends on your GPU drivers
+#     # - get the exact command from https://pytorch.org/get-started/locally/
 #     pip install torch
 #
 # ----------------------------------------------------------------------------
@@ -61,6 +83,19 @@ decord==0.6.0
 lmdb==1.7.5
 peft
 torchvision
+
+
+# --- Needed by transformers' apply_chat_template ----------------------------
+# The devcontainer's SYSTEM jinja2 is 3.0.3, which is too old and raises:
+#   ImportError: apply_chat_template requires jinja2>=3.1.0
+# Inside a proper venv this is installed fresh and the problem disappears;
+# pinned explicitly so it is never inherited from the system packages.
+jinja2>=3.1.0
+
+
+# --- Convenience ------------------------------------------------------------
+# Speeds up the multi-GB model download from Hugging Face.
+hf_transfer
 
 
 # --- Needed by run_locateanything_comparison.py to read/write the manifest --

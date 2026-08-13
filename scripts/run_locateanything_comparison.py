@@ -52,6 +52,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -77,7 +78,23 @@ class LocateAnythingWorker:
         ).to(device).eval()
         print("Model loaded.\n")
 
-    def detect(self, image, categories=("person",), max_new_tokens: int = 2048) -> str:
+    def detect(self, image, categories=("person",), max_new_tokens: int = 2048,
+               deterministic: bool = True) -> str:
+        """
+        Detect people in one image.
+
+        deterministic=True (default) uses greedy decoding, so the same image
+        always produces the same boxes. This matters: the model card's sampling
+        settings (do_sample=True, temperature=0.7, top_p=0.9) make box
+        predictions STOCHASTIC, and two runs over the same 30 frames disagreed
+        on 3 of them (10%) - frame_001 gave 5 people then 6, frame_016 gave 3
+        then 5. A detector that returns different answers for the same input is
+        not a defensible basis for a reported recall figure, so greedy decoding
+        is used for any measurement that goes into the dissertation.
+
+        Pass deterministic=False only if you deliberately want to characterise
+        that run-to-run variance (which is itself a legitimate thing to report).
+        """
         with self.torch.no_grad():
             cats = "</c>".join(categories)
             prompt = f"Locate all the instances that matches the following description: {cats}."
@@ -86,6 +103,12 @@ class LocateAnythingWorker:
             text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
             images, videos = self.processor.process_vision_info(messages)
             inputs = self.processor(text=[text], images=images, videos=videos, return_tensors="pt").to(self.device)
+
+            sampling = (
+                {"do_sample": False}
+                if deterministic
+                else {"do_sample": True, "temperature": 0.7, "top_p": 0.9}
+            )
 
             response = self.model.generate(
                 pixel_values=inputs["pixel_values"].to(self.dtype),
@@ -96,11 +119,9 @@ class LocateAnythingWorker:
                 max_new_tokens=max_new_tokens,
                 use_cache=True,
                 generation_mode="hybrid",
-                temperature=0.7,
-                do_sample=True,
-                top_p=0.9,
                 repetition_penalty=1.1,
                 verbose=False,
+                **sampling,
             )
             return response[0] if isinstance(response, tuple) else response
 
@@ -141,6 +162,10 @@ def main() -> None:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--report-only", action="store_true",
                         help="skip inference, just re-print the comparison from an existing manifest")
+    parser.add_argument("--sampling", action="store_true",
+                        help="use the model card's stochastic sampling instead of greedy "
+                             "decoding. Default is greedy (reproducible). Only use this to "
+                             "deliberately measure run-to-run variance.")
     args = parser.parse_args()
 
     frames_dir = args.frames_dir.expanduser().resolve()
@@ -158,23 +183,55 @@ def main() -> None:
 
     worker = LocateAnythingWorker(device=args.device)
 
+    deterministic = not args.sampling
+    print("Decoding: " + ("GREEDY (deterministic, reproducible)" if deterministic
+                          else "SAMPLING (stochastic - results will vary between runs)"))
+    if not deterministic:
+        print("  WARNING: figures from a sampled run are not reproducible and should")
+        print("           not be quoted as a single recall number in the dissertation.")
+
     counts = []
+    timings = []
     for position, row in enumerate(df.itertuples(index=False), start=1):
         image_path = frames_dir / row.frame_file
         if not image_path.exists():
             print(f"  [{position}/{len(df)}] {row.frame_file}: MISSING, skipping")
             counts.append(None)
+            timings.append(None)
             continue
         image = Image.open(image_path).convert("RGB")
-        answer = worker.detect(image)
+        started = time.perf_counter()
+        answer = worker.detect(image, deterministic=deterministic)
+        elapsed = time.perf_counter() - started
         count = worker.count_boxes(answer)
         counts.append(count)
+        timings.append(round(elapsed, 3))
         print(f"  [{position}/{len(df)}] {row.frame_file}: "
-              f"LA-3B={count}  YOLO={row.yolo_count}  GT={row.num_faces_gt}")
+              f"LA-3B={count}  YOLO={row.yolo_count}  GT={row.num_faces_gt}  "
+              f"({elapsed:.2f}s)")
 
     df["la3b_count"] = counts
+    df["la3b_seconds"] = timings
     df.to_csv(manifest_path, index=False)
     print(f"\nManifest updated: {manifest_path}")
+
+    # Inference speed is the real justification for using YOLOv8n in the live
+    # system, so measure it rather than estimating - this number is citable.
+    valid = [t for t in timings if t is not None]
+    if valid:
+        arr = sorted(valid)
+        mean_s = sum(arr) / len(arr)
+        median_s = arr[len(arr) // 2]
+        print("\n" + "=" * 68)
+        print("LocateAnything-3B INFERENCE SPEED (measured on this machine)")
+        print("=" * 68)
+        print(f"  frames timed : {len(arr)}")
+        print(f"  mean         : {mean_s:.2f} s/frame  ({1/mean_s:.2f} FPS)")
+        print(f"  median       : {median_s:.2f} s/frame")
+        print(f"  min / max    : {arr[0]:.2f}s / {arr[-1]:.2f}s")
+        print("\n  For comparison, YOLOv8n runs in roughly 0.001-0.005 s/frame")
+        print("  (200-1000+ FPS) on GPU. Reactive robot navigation needs ~10-30 Hz,")
+        print("  so this is the measured basis for using YOLOv8n in the live loop.")
 
     report(df)
 
