@@ -1,0 +1,64 @@
+{
+  "scenario": "restaurant_testing",
+  "world_file": "restaurant_testing.world",
+  "groups": [
+    {
+      "group_id": 0,
+      "source_name": "group_01",
+      "centre_x": -3.333,
+      "centre_y": -0.333,
+      "radius": 0.654,
+      "ospace_radius": 0.654,
+      "num_people": 3,
+      "members": [
+        {
+          "name": "group_01_person_01_talking",
+          "x": -3.0,
+          "y": 0.0,
+          "yaw": -2.3562
+        },
+        {
+          "name": "group_01_person_02_static",
+          "x": -3.0,
+          "y": -1.0,
+          "yaw": 2.0344
+        },
+        {
+          "name": "group_01_person_03_talking",
+          "x": -4.0,
+          "y": 0.0,
+          "yaw": -0.4636
+        }
+      ]
+    },
+    {
+      "group_id": 1,
+      "source_name": "group_02",
+      "centre_x": -0.333,
+      "centre_y": 4.667,
+      "radius": 0.654,
+      "ospace_radius": 0.654,
+      "num_people": 3,
+      "members": [
+        {
+          "name": "group_02_person_01_static",
+          "x": -1.0,
+          "y": 5.0,
+          "yaw": -0.7854
+        },
+        {
+          "name": "group_02_person_02_talking",
+          "x": 0.0,
+          "y": 5.0,
+          "yaw": -2.8198
+        },
+        {
+          "name": "group_02_person_03_static",
+          "x": 0.0,
+          "y": 4.0,
+          "yaw": 2.3562
+        }
+      ]
+    }
+  ]
+}

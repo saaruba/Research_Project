@@ -127,7 +127,14 @@ Today sits around week 6 of that plan. M2 is not yet fully done, and M3/M4 haven
 - [x] Compare final chosen model against Phase E's rule-based baseline — done, see Phase H
 
 ### Phase G — Integration
-- [ ] Full pipeline: camera → detection → tracking → group/O-space → policy (baseline or BC) → pose validation → Nav2 execution
+- [x] **Full pipeline BUILT (13 Aug 2026) — written and syntax-checked, awaiting the finished Gazebo world to run.** Four new nodes in `src/tiago_group_approach`, plus one launch file that wires them together:
+  - `group_perception_node` — subscribes RGB + depth + CameraInfo, runs YOLO, **back-projects each person to real METRES** using the depth image and camera intrinsics, transforms to the map frame via TF, clusters in true world coordinates, publishes `/group_centroid` (+ `/detected_people`, `/group_markers` for RViz). This is where the project stops being offline data analysis and becomes a robot system — and where the pixel-vs-metres limitation that constrained Phases B/C finally disappears.
+  - `bc_policy_node` — loads `approach_pose_random_forest_tuned.joblib`, assembles the exact 7-feature vector used in training, converts the model's *relative* (dx, dy, dyaw) prediction into a map-frame Nav2 goal. Includes sanity clamps (rejects out-of-distribution predictions, enforces a minimum standoff) so a bad extrapolation cannot send the robot into a group.
+  - `group_approach_baseline_node` — the existing geometric rule, unchanged.
+  - `metrics_recorder_node` — records all six simulation-only metrics per run.
+  - `launch/group_approach.launch.py` — one command, `policy:=rule` or `policy:=bc`. **Both policies consume the same `/group_centroid` and emit the same goal type, so the only variable between runs is the policy — that IS the Objective 4 experiment.**
+- [ ] Run it once the Gazebo world is finished (blocked only on that now)
+- [ ] (Optional) Add tracking so people persist identity across frames — still unbuilt, still optional
 
 ### Phase H — Evaluation
 - [x] **Built the offline evaluation harness (6 Aug 2026, `scripts/evaluate_approach_pose.py`)** — compares 4 policies (naive / rule-based / Random Forest / MLP) on the held-out test sessions using the proposal's Objective 4 metrics and thresholds, reporting mean AND median error (median matters: a few huge errors dominate the mean) plus % of rows meeting each threshold. Results saved to `dataset/processed/models/approach_pose_evaluation.{json,csv}`.
@@ -151,7 +158,9 @@ Today sits around week 6 of that plan. M2 is not yet fully done, and M3/M4 haven
   - Tuning mattered: it moved the RF from 0.401→0.365 m and 29.3°→25.8°, and the MLP from 0.465→0.395 m. Notably the winning MLP config (32/16 units, alpha=0.1) is far *smaller* and more regularised than the proposal's specified 128/64 — the proposed architecture was simply too large for 462 independent demonstration events.
 
   So the defensible dissertation claim is: **"Behavioural Cloning from non-expert demonstrations learned group orientation better than a geometric rule, but did not learn stopping position better, and neither approach achieved socially-acceptable orientation accuracy on this dataset."**
-- [ ] Metrics that CANNOT be computed offline and still need the running simulation (Phase D/G) — do not fabricate these from recorded data: O-space intrusion rate, min distance to group, group cut-through rate (all need group positions in *metres*, which this uncalibrated-video dataset cannot provide), plus collision-free rate, task success rate, path length, navigation time (all properties of an executed trajectory).
+- [x] **The six simulation-only metrics are now IMPLEMENTED (13 Aug 2026, `metrics_recorder_node` + `scripts/summarise_sim_results.py`)** — they just need runs. Measured per trial: O-space intrusion (robot *footprint* overlapping the O-space circle, not merely its centre), minimum distance to any person, group cut-through (path segment crossing the line between two members of the same group — geometrically distinct from intrusion), collision-free, task success (correct standoff band + facing the group + no collision), path length, navigation time.
+  - **Scored against the world's TRUE person positions, not the robot's detections.** Otherwise a perception failure flatters the result: a robot that never sees a group cannot intrude on it and would score perfectly. Evaluating against ground truth measures the *behaviour* and keeps perception failures separable in the write-up.
+  - `summarise_sim_results.py` aggregates runs into the rule-vs-BC comparison table and a CSV. Tested end-to-end on synthetic runs. It deliberately reports counts (`8/10`) alongside percentages, because with few trials a bare "80%" hides how thin the evidence is.
 - [ ] Test on at least one unseen group configuration if time allows
 
 ### Phase I — Literature review & writing

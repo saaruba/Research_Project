@@ -1,0 +1,226 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /What the robot sees1
+        - /What the robot thinks1
+      Splitter Ratio: 0.5
+    Tree Height: 620
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+
+Visualization Manager:
+  Class: ""
+  Name: root
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: map
+    Frame Rate: 15
+  Displays:
+
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Color: 100; 100; 100
+      Plane: XY
+      Plane Cell Count: 20
+      Reference Frame: <Fixed Frame>
+      Alpha: 0.3
+
+    - Class: rviz_default_plugins/RobotModel
+      Name: TIAGo
+      Enabled: true
+      Description Topic:
+        Value: /robot_description
+        Depth: 5
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+      Alpha: 1
+      Visual Enabled: true
+      Collision Enabled: false
+
+    # ------------------------------------------------------------------
+    # WHAT THE ROBOT SEES - raw sensor streams
+    # ------------------------------------------------------------------
+    - Class: rviz_common/Group
+      Name: What the robot sees
+      Enabled: true
+      Displays:
+
+        - Class: rviz_default_plugins/Image
+          Name: RGB camera
+          Enabled: true
+          Topic:
+            Value: /head_front_camera/rgb/image_raw
+            Depth: 5
+            Durability Policy: Volatile
+            Reliability Policy: Best Effort
+          Max Value: 1
+          Min Value: 0
+          Normalize Range: true
+
+        - Class: rviz_default_plugins/Image
+          Name: Depth camera
+          Enabled: false
+          Topic:
+            Value: /head_front_camera/depth/image_raw
+            Depth: 5
+            Durability Policy: Volatile
+            Reliability Policy: Best Effort
+          Max Value: 8
+          Min Value: 0
+          Normalize Range: false
+
+        - Class: rviz_default_plugins/PointCloud2
+          Name: Depth cloud
+          Enabled: true
+          Topic:
+            Value: /head_front_camera/depth/rgb/points
+            Depth: 5
+            Durability Policy: Volatile
+            Reliability Policy: Best Effort
+          Alpha: 1
+          Size (m): 0.015
+          Style: Points
+          Color Transformer: RGB8
+          Decay Time: 0
+
+        - Class: rviz_default_plugins/LaserScan
+          Name: LiDAR
+          Enabled: true
+          Topic:
+            Value: /scan_raw
+            Depth: 5
+            Durability Policy: Volatile
+            Reliability Policy: Best Effort
+          Alpha: 1
+          Size (m): 0.03
+          Style: Spheres
+          Color: 255; 85; 0
+          Color Transformer: FlatColor
+          Decay Time: 0
+
+    # ------------------------------------------------------------------
+    # WHAT THE ROBOT THINKS - this project's own perception output
+    # ------------------------------------------------------------------
+    - Class: rviz_common/Group
+      Name: What the robot thinks
+      Enabled: true
+      Displays:
+
+        # Blue cylinders = detected people, red sphere = group centre,
+        # translucent disc = estimated O-space. Published by
+        # group_perception_node.
+        - Class: rviz_default_plugins/MarkerArray
+          Name: Groups and O-space
+          Enabled: true
+          Topic:
+            Value: /group_markers
+            Depth: 100
+            Durability Policy: Volatile
+            Reliability Policy: Reliable
+          Namespaces:
+            {}
+
+        - Class: rviz_default_plugins/PoseArray
+          Name: Detected people
+          Enabled: true
+          Topic:
+            Value: /detected_people
+            Depth: 5
+            Durability Policy: Volatile
+            Reliability Policy: Reliable
+          Color: 0; 170; 255
+          Alpha: 1
+          Shape: Arrow (Flat)
+          Arrow Length: 0.3
+
+    # ------------------------------------------------------------------
+    # NAVIGATION
+    # ------------------------------------------------------------------
+    - Class: rviz_default_plugins/Map
+      Name: Map
+      Enabled: true
+      Topic:
+        Value: /map
+        Depth: 1
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+      Alpha: 0.6
+      Color Scheme: map
+
+    - Class: rviz_default_plugins/Path
+      Name: Nav2 plan
+      Enabled: true
+      Topic:
+        Value: /plan
+        Depth: 5
+        Durability Policy: Volatile
+        Reliability Policy: Reliable
+      Color: 0; 255; 127
+      Line Style: Lines
+      Alpha: 1
+
+    - Class: rviz_default_plugins/Polygon
+      Name: Robot footprint
+      Enabled: true
+      Topic:
+        Value: /local_costmap/published_footprint
+        Depth: 5
+        Durability Policy: Volatile
+        Reliability Policy: Reliable
+      Color: 255; 255; 0
+      Alpha: 1
+
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: false
+      Marker Scale: 0.5
+      Show Names: true
+      Show Axes: true
+      Show Arrows: false
+
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic:
+        Value: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Value: /goal_pose
+    - Class: rviz_default_plugins/Measure
+
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Distance: 14
+      Focal Point:
+        X: -2
+        Y: 2
+        Z: 0
+      Pitch: 0.85
+      Yaw: 5.5
+      Near Clip Distance: 0.01
+      Target Frame: <Fixed Frame>
+    Saved: ~
+
+Window Geometry:
+  Height: 900
+  Width: 1500
+  Displays:
+    collapsed: false
+  Views:
+    collapsed: false
+  RGB camera:
+    collapsed: false
+  Depth camera:
+    collapsed: false

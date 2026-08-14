@@ -54,12 +54,20 @@ echo "ROS_DISTRO: ${ROS_DISTRO:-unknown}"
 # Packages the project actually needs, with why - so future-you knows what is
 # safe to drop if disk space or install time becomes a problem.
 PACKAGES=(
+    # This container's base image ships Python WITHOUT pip or venv. That is why
+    # `python3 -m venv` fails with "ensurepip is not available" and why
+    # `python3 -m pip` reports "No module named pip". Both are needed: pip to
+    # install ultralytics for the ROS perception node, venv for the isolated
+    # LocateAnything environment.
+    "python3-pip:pip for the SYSTEM python - needed to install ultralytics"
+    "python3-venv:venv module - needed for the LocateAnything virtualenv"
     "ros-humble-navigation2:Nav2 core - planners, controllers, behaviour tree"
     "ros-humble-nav2-bringup:Nav2 launch files + default params (needed to bring Nav2 up at all)"
     "ros-humble-tiago-description:TIAGo URDF/meshes - without this there is no robot to spawn"
     "ros-humble-tiago-simulation:TIAGo Gazebo integration, controllers, sensor plugins"
     "ros-humble-gazebo-ros-pkgs:Gazebo<->ROS bridge, spawn_entity service"
     "ros-humble-teleop-twist-keyboard:manual driving, useful for sanity-checking the robot moves"
+    "ros-humble-slam-toolbox:SLAM - lets Nav2 localise in a custom world with no prebuilt map"
 )
 
 echo ""
@@ -165,6 +173,40 @@ install_custom_worlds() {
 echo ""
 echo "--- Installing custom worlds into pal_gazebo_worlds ---"
 install_custom_worlds
+
+# --- Python packages the ROS nodes import -----------------------------------
+# group_perception_node imports ultralytics (YOLOv8). It runs under
+# /usr/bin/python3 - NOT the la3b_env venv - so ultralytics must be installed
+# for the system python. Installing it into the venv instead is a very easy
+# mistake to make and produces a confusing ModuleNotFoundError at launch.
+echo ""
+echo "--- Python packages for the ROS nodes ---"
+if python3 -c "import ultralytics" 2>/dev/null; then
+    echo "  ultralytics already importable by /usr/bin/python3"
+elif python3 -m pip --version >/dev/null 2>&1; then
+    echo "  installing ultralytics for the system python (this pulls PyTorch - several minutes)..."
+    python3 -m pip install --user ultralytics || \
+        echo "  FAILED - install manually: python3 -m pip install --user ultralytics"
+    # ------------------------------------------------------------------
+    # REPAIR THE BUILD TOOLCHAIN AFTER INSTALLING ultralytics.
+    #
+    # ultralytics drags in a modern setuptools, which then calls
+    #   packaging.utils.canonicalize_version(..., strip_trailing_zero=True)
+    # That keyword only exists in packaging >= 24.0, but Ubuntu 22.04 ships
+    # packaging 21.3 - so every subsequent `colcon build` dies with:
+    #   TypeError: canonicalize_version() got an unexpected keyword argument
+    # Separately, setuptools >= 80 drops the setup.py entry points colcon
+    # relies on for ament_python packages.
+    # Pinning both keeps colcon working after a Python install.
+    # ------------------------------------------------------------------
+    echo "  repairing build toolchain (packaging / setuptools) for colcon..."
+    python3 -m pip install --user --upgrade "packaging>=24.0" "setuptools<80" || \
+        echo "  FAILED - run manually: python3 -m pip install --user --upgrade 'packaging>=24.0' 'setuptools<80'"
+else
+    echo "  pip is STILL unavailable for /usr/bin/python3."
+    echo "  Install it first, then re-run this script:"
+    echo "      sudo apt-get update && sudo apt-get install -y python3-pip"
+fi
 
 # --- Verify -----------------------------------------------------------------
 echo ""
