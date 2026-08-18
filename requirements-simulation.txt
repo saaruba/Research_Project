@@ -1,0 +1,59 @@
+# ============================================================================
+# TIAGo Group-Approach - SIMULATION runtime only
+#
+#     pip install -r requirements-simulation.txt
+#
+# This is the short list: exactly what the live ROS 2 pipeline imports when
+# the robot is running in Gazebo. Use this on a machine that will only RUN the
+# experiment, not re-derive the offline results.
+#
+# For the full offline data pipeline (reading the PLUS-HRI bags, extracting
+# detections, training the models) use requirements.txt instead. That needs
+# the raw dataset; this does not.
+#
+# ----------------------------------------------------------------------------
+# NOT INSTALLED HERE, AND CANNOT BE
+# ----------------------------------------------------------------------------
+# ROS 2 packages - rclpy, tf2_ros, nav2_msgs, geometry_msgs, sensor_msgs,
+# gazebo_msgs, trajectory_msgs, launch, launch_ros, ament_index_python - are
+# NOT on PyPI. They come from the ROS 2 Humble system install. See
+# docs/LAB_PC_SETUP.md, or just run scripts/install_sim_stack.sh.
+# ============================================================================
+
+
+# --- Core -------------------------------------------------------------------
+# Image conversion in group_perception_node, depth back-projection, geometry.
+numpy==2.2.6
+
+
+# --- Person detection -------------------------------------------------------
+# YOLOv8n, the detector used for every experiment run (99.7% recall on the
+# sessions 1/3 ground truth against the proposal's 80% target).
+#
+# INSTALL SIZE WARNING: on Linux, pip resolves ultralytics' PyTorch dependency
+# to the CUDA build and pulls in the whole NVIDIA stack - roughly 3-4 GB. If
+# your lab PC has no GPU, or you simply do not want the wait, install the
+# CPU-only PyTorch FIRST and this file second:
+#
+#     pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#     pip install -r requirements-simulation.txt
+#
+# YOLOv8n is tiny and runs comfortably on CPU at the ~2 Hz this pipeline uses.
+ultralytics>=8.3.0,<9.0
+
+
+# --- Detection overlay ------------------------------------------------------
+# Draws the boxes on /perception/image_annotated.
+# Headless build: the container has no display of its own. If you want
+# cv2.imshow() windows on a desktop machine, swap for opencv-python -
+# install ONE of them, never both.
+opencv-python-headless==4.13.0.92
+
+
+# --- Loading the trained BC model -------------------------------------------
+# bc_policy_node loads approach_pose_random_forest_tuned.joblib. scikit-learn
+# must be present to UNPICKLE it even though no training happens at runtime,
+# and the version must match the one that wrote the file or you will get
+# InconsistentVersionWarning and possibly wrong predictions.
+scikit-learn==1.7.2
+joblib==1.5.3

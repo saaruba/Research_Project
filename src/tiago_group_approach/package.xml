@@ -16,7 +16,9 @@
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>visualization_msgs</depend>
-  <depend>cv_bridge</depend>
+  <!-- cv_bridge deliberately NOT used: its compiled extension is built against
+       numpy 1.x and breaks under the numpy 2.x this workspace needs. Images are
+       converted manually in group_perception_node.imgmsg_to_array(). -->
   <depend>message_filters</depend>
   <depend>launch</depend>
   <depend>launch_ros</depend>

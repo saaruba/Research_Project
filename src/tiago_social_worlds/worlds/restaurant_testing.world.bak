@@ -3,16 +3,6 @@
 <sdf version="1.6">
 
   <world name="restaurant_party_hall">
-    <!-- Added by scripts/add_gazebo_ros_plugins.py -->
-    <!-- gazebo_ros_factory provides /spawn_entity. Without it, TIAGo cannot be
-         inserted into this world and every downstream system fails. -->
-    <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so">
-      <ros>
-        <namespace>/gazebo</namespace>
-      </ros>
-      <update_rate>10.0</update_rate>
-    </plugin>
-
 
     <!-- ===================================================== -->
     <!-- PHYSICS                                               -->
@@ -714,63 +704,235 @@
 
 
     <!-- ===================================================== -->
-    <!-- BUFFET / SERVICE COUNTER                              -->
-    <!-- South-west side of restaurant                         -->
-    <!-- Centre: (-5.5, -6.0), yaw = +90 deg                  -->
-    <!-- Approx. long-axis coverage: X ~= -7.5 to -3.5         -->
+    <!-- GROUP 1 - PERSON 2 - STATIC STANDING                  -->
+    <!-- Position (-3,-1)                                     -->
+    <!-- Yaw = 2.0344 rad                                     -->
     <!-- ===================================================== -->
 
-    <include>
-      <uri>model://Buffet</uri>
-      <name>restaurant_buffet_01</name>
-      <pose>-5.5 -6.0 0 0 0 1.5708</pose>
-      <static>true</static>
-    </include>
+    <actor name="group_01_person_02_static">
+
+      <pose>
+        -3 -1 0 0 0 2.0344
+      </pose>
+
+      <skin>
+
+        <filename>
+          file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae
+        </filename>
+
+        <scale>1.0</scale>
+
+      </skin>
+
+    </actor>
 
 
     <!-- ===================================================== -->
-    <!-- RESTAURANT DECORATIVE PLANTS                          -->
+    <!-- GROUP 1 - PERSON 3 - TALKING                          -->
+    <!-- Position (-4,0)                                      -->
+    <!-- Yaw = -0.4636 rad                                    -->
     <!-- ===================================================== -->
 
-    <!-- PLANT 1 : (-7, +2) -->
-    <include>
-      <uri>model://low-poly-plant-in-a-pot</uri>
-      <name>restaurant_plant_01</name>
-      <pose>-7 2 0 0 0 0</pose>
-      <static>true</static>
-    </include>
+    <actor name="group_01_person_03_talking">
 
-    <!-- PLANT 2 : (+1, -7) -->
-    <include>
-      <uri>model://low-poly-plant-in-a-pot</uri>
-      <name>restaurant_plant_02</name>
-      <pose>1 -7 0 0 0 0.70</pose>
-      <static>true</static>
-    </include>
+      <pose>0 0 0 0 0 0</pose>
 
-    <!-- PLANT 3 : (-1, -7) -->
-    <include>
-      <uri>model://low-poly-plant-in-a-pot</uri>
-      <name>restaurant_plant_03</name>
-      <pose>-1 -7 0 0 0 -0.50</pose>
-      <static>true</static>
-    </include>
+      <skin>
 
-    <!-- PLANT 4 : (+10, -1) -->
-    <include>
-      <uri>model://low-poly-plant-in-a-pot</uri>
-      <name>restaurant_plant_04</name>
-      <pose>10 -1 0 0 0 1.20</pose>
-      <static>true</static>
-    </include>
+        <filename>
+          file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae
+        </filename>
 
-    <!-- PLANT 5 : (-5, +7) -->
-    <include>
-      <uri>model://low-poly-plant-in-a-pot</uri>
-      <name>restaurant_plant_05</name>
-      <pose>-5 7 0 0 0 -1.00</pose>
-      <static>true</static>
-    </include>
+        <scale>1.0</scale>
+
+      </skin>
+
+
+      <animation name="talk">
+
+        <filename>
+          file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae
+        </filename>
+
+        <scale>1.0</scale>
+
+        <interpolate_x>false</interpolate_x>
+
+      </animation>
+
+
+      <script>
+
+        <loop>true</loop>
+
+        <delay_start>0.8</delay_start>
+
+        <auto_start>true</auto_start>
+
+        <trajectory id="103" type="talk">
+
+          <waypoint>
+
+            <time>0</time>
+
+            <pose>
+              -4 0 0 0 0 -0.4636
+            </pose>
+
+          </waypoint>
+
+
+          <waypoint>
+
+            <time>30</time>
+
+            <pose>
+              -4 0 0 0 0 -0.4636
+            </pose>
+
+          </waypoint>
+
+        </trajectory>
+
+      </script>
+
+    </actor>
+
+
+    <!-- ===================================================== -->
+    <!-- HUMAN GROUP 2                                        -->
+    <!--                                                      -->
+    <!-- Person 1 = (-1,5)                                    -->
+    <!-- Person 2 = ( 0,5)                                    -->
+    <!-- Person 3 = ( 0,4)                                    -->
+    <!-- Person 4 = (-2,5)                                    -->
+    <!--                                                      -->
+    <!-- Group centre approximately (-0.75,4.75)               -->
+    <!-- ===================================================== -->
+
+
+    <!-- ===================================================== -->
+    <!-- GROUP 2 - PERSON 1 - STATIC STANDING                  -->
+    <!-- Position (-1,5)                                      -->
+    <!-- Yaw = -0.7854                                        -->
+    <!-- ===================================================== -->
+
+    <actor name="group_02_person_01_static">
+
+      <pose>
+        -1 5 0 0 0 -0.7854
+      </pose>
+
+      <skin>
+
+        <filename>
+          file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae
+        </filename>
+
+        <scale>1.0</scale>
+
+      </skin>
+
+    </actor>
+
+
+    <!-- ===================================================== -->
+    <!-- GROUP 2 - PERSON 2 - TALKING                          -->
+    <!-- Position (0,5)                                       -->
+    <!-- Yaw = -2.8198                                        -->
+    <!-- ===================================================== -->
+
+    <actor name="group_02_person_02_talking">
+
+      <pose>0 0 0 0 0 0</pose>
+
+      <skin>
+
+        <filename>
+          file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae
+        </filename>
+
+        <scale>1.0</scale>
+
+      </skin>
+
+
+      <animation name="talk">
+
+        <filename>
+          file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae
+        </filename>
+
+        <scale>1.0</scale>
+
+        <interpolate_x>false</interpolate_x>
+
+      </animation>
+
+
+      <script>
+
+        <loop>true</loop>
+
+        <delay_start>0.4</delay_start>
+
+        <auto_start>true</auto_start>
+
+        <trajectory id="202" type="talk">
+
+          <waypoint>
+
+            <time>0</time>
+
+            <pose>
+              0 5 0 0 0 -2.8198
+            </pose>
+
+          </waypoint>
+
+
+          <waypoint>
+
+            <time>30</time>
+
+            <pose>
+              0 5 0 0 0 -2.8198
+            </pose>
+
+          </waypoint>
+
+        </trajectory>
+
+      </script>
+
+    </actor>
+
+
+    <!-- ===================================================== -->
+    <!-- GROUP 2 - PERSON 3 - STATIC STANDING                  -->
+    <!-- Position (0,4)                                       -->
+    <!-- Yaw = 2.3562                                         -->
+    <!-- ===================================================== -->
+
+    <actor name="group_02_person_03_static">
+
+      <pose>
+        0 4 0 0 0 2.3562
+      </pose>
+
+      <skin>
+
+        <filename>
+          file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae
+        </filename>
+
+        <scale>1.0</scale>
+
+      </skin>
+
+    </actor>
+
 
   </world>
 

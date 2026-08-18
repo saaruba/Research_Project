@@ -54,9 +54,24 @@ Visualization Manager:
       Enabled: true
       Displays:
 
+        # The detector's own view, with green boxes and distances drawn on.
+        # FIRST and enabled by default: this is the display that answers
+        # "is it actually seeing the person?" without any guesswork.
+        - Class: rviz_default_plugins/Image
+          Name: DETECTIONS (annotated)
+          Enabled: true
+          Topic:
+            Value: /perception/image_annotated
+            Depth: 5
+            Durability Policy: Volatile
+            Reliability Policy: Reliable
+          Max Value: 1
+          Min Value: 0
+          Normalize Range: true
+
         - Class: rviz_default_plugins/Image
           Name: RGB camera
-          Enabled: true
+          Enabled: false
           Topic:
             Value: /head_front_camera/rgb/image_raw
             Depth: 5

@@ -36,6 +36,12 @@ setup(
             # Policies (drop-in swappable, both consume /group_centroid)
             'group_approach_baseline_node = tiago_group_approach.group_approach_baseline_node:main',
             'bc_policy_node = tiago_group_approach.bc_policy_node:main',
+            # Localisation: continuous map->odom from Gazebo ground truth
+            'gt_localisation_node = tiago_group_approach.gt_localisation_node:main',
+            # Exploration: patrols the room so the camera can find people at all
+            'explore_node = tiago_group_approach.explore_node:main',
+            # Scripted patrol tour that ends the run and reports what it saw
+            'mission_node = tiago_group_approach.mission_node:main',
             # Evaluation
             'metrics_recorder_node = tiago_group_approach.metrics_recorder_node:main',
         ],

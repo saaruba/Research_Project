@@ -1,0 +1,111 @@
+{
+  "scenario": "restaurant_final",
+  "world_file": "restaurant_final.world",
+  "groups": [
+    {
+      "group_id": 0,
+      "source_name": "group_01",
+      "centre_x": -3.5,
+      "centre_y": 4.7,
+      "radius": 0.9,
+      "ospace_radius": 0.9,
+      "num_people": 4,
+      "members": [
+        {
+          "name": "group_01_person_01_male_suit",
+          "x": -4.4,
+          "y": 4.7,
+          "yaw": 0.0
+        },
+        {
+          "name": "group_01_person_02_female",
+          "x": -3.5,
+          "y": 5.6,
+          "yaw": -1.5708
+        },
+        {
+          "name": "group_01_person_03_male",
+          "x": -2.6,
+          "y": 4.7,
+          "yaw": 3.1416
+        },
+        {
+          "name": "group_01_person_04_child",
+          "x": -3.5,
+          "y": 3.8,
+          "yaw": 1.5708
+        }
+      ]
+    },
+    {
+      "group_id": 1,
+      "source_name": "group_02",
+      "centre_x": 1.5,
+      "centre_y": 0.8,
+      "radius": 0.9,
+      "ospace_radius": 0.9,
+      "num_people": 4,
+      "members": [
+        {
+          "name": "group_02_person_01_female",
+          "x": 0.6,
+          "y": 0.8,
+          "yaw": 0.0
+        },
+        {
+          "name": "group_02_person_02_male",
+          "x": 1.5,
+          "y": 1.7,
+          "yaw": -1.5708
+        },
+        {
+          "name": "group_02_person_03_child",
+          "x": 2.4,
+          "y": 0.8,
+          "yaw": 3.1416
+        },
+        {
+          "name": "group_02_person_04_male_suit",
+          "x": 1.5,
+          "y": -0.1,
+          "yaw": 1.5708
+        }
+      ]
+    },
+    {
+      "group_id": 2,
+      "source_name": "group_03",
+      "centre_x": 3.5,
+      "centre_y": -2.6,
+      "radius": 0.9,
+      "ospace_radius": 0.9,
+      "num_people": 4,
+      "members": [
+        {
+          "name": "group_03_person_01_child",
+          "x": 2.6,
+          "y": -2.6,
+          "yaw": 0.0
+        },
+        {
+          "name": "group_03_person_02_male_suit",
+          "x": 3.5,
+          "y": -1.7,
+          "yaw": -1.5708
+        },
+        {
+          "name": "group_03_person_03_female",
+          "x": 4.4,
+          "y": -2.6,
+          "yaw": 3.1416
+        },
+        {
+          "name": "group_03_person_04_male",
+          "x": 3.5,
+          "y": -3.5,
+          "yaw": 1.5708
+        }
+      ]
+    }
+  ]
+}

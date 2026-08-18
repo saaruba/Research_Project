@@ -68,6 +68,20 @@ class GroupApproachBaselineNode(Node):
         self.declare_parameter('map_frame', 'map')
         self.declare_parameter('robot_frame', 'base_link')
 
+        # --- Goal throttling ------------------------------------------------
+        # Perception publishes a centroid at camera rate. Without throttling,
+        # every message sent a fresh NavigateToPose goal, each one PREEMPTING
+        # the last, so Nav2 restarted planning continuously and the robot
+        # barely moved - which matches the recorded runs where final_pose was
+        # still essentially the spawn point. A new goal is now only sent if the
+        # target has actually moved, or the previous goal has finished.
+        self.declare_parameter('goal_update_threshold_m', 0.40)
+        self.declare_parameter('min_goal_interval_s', 3.0)
+
+        self._goal_in_flight = False
+        self._last_goal_xy = None
+        self._last_goal_time = 0.0
+
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
@@ -140,6 +154,27 @@ class GroupApproachBaselineNode(Node):
             return
         approach_x, approach_y, facing_yaw = result
 
+        # --- Should this become a new Nav2 goal? -----------------------------
+        now = self.get_clock().now().nanoseconds / 1e9
+        threshold = self.get_parameter('goal_update_threshold_m').value
+        interval = self.get_parameter('min_goal_interval_s').value
+
+        if now - self._last_goal_time < interval:
+            return
+
+        if self._goal_in_flight and self._last_goal_xy is not None:
+            moved = math.hypot(approach_x - self._last_goal_xy[0],
+                               approach_y - self._last_goal_xy[1])
+            if moved < threshold:
+                # Same target, goal already running - let the robot drive
+                # instead of restarting the plan.
+                return
+            self.get_logger().info(
+                f'Target moved {moved:.2f} m (> {threshold:.2f} m) - re-planning.')
+
+        self._last_goal_xy = (approach_x, approach_y)
+        self._last_goal_time = now
+
         self.get_logger().info(
             f'Group centroid ({msg.point.x:.2f}, {msg.point.y:.2f}) -> '
             f'approach pose ({approach_x:.2f}, {approach_y:.2f}), facing {math.degrees(facing_yaw):.1f} deg'
@@ -162,6 +197,7 @@ class GroupApproachBaselineNode(Node):
         goal_msg.pose.pose.orientation.w = math.cos(yaw / 2.0)
 
         self.get_logger().info(f'Sending Nav2 goal: ({x:.2f}, {y:.2f}), yaw={math.degrees(yaw):.1f} deg')
+        self._goal_in_flight = True
         send_goal_future = self.nav_client.send_goal_async(goal_msg)
         send_goal_future.add_done_callback(self.goal_response_callback)
 
@@ -169,14 +205,20 @@ class GroupApproachBaselineNode(Node):
         goal_handle = future.result()
         if not goal_handle.accepted:
             self.get_logger().error('Nav2 goal was rejected.')
+            self._goal_in_flight = False
             return
         self.get_logger().info('Nav2 goal accepted - robot is moving.')
+        self._goal_in_flight = True
         result_future = goal_handle.get_result_async()
         result_future.add_done_callback(self.result_callback)
 
     def result_callback(self, future):
         result = future.result().result
         self.get_logger().info(f'Nav2 goal finished. Result: {result}')
+        # Clearing this re-arms the node: the next centroid starts a fresh
+        # approach. The node therefore keeps approaching for as long as the
+        # simulation runs, rather than stopping after one successful approach.
+        self._goal_in_flight = False
 
 
 def main(args=None):

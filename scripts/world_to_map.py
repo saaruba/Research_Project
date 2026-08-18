@@ -61,6 +61,11 @@ def parse_pose(text: str | None) -> tuple[float, float, float, float]:
     return parts[0], parts[1], parts[2], parts[5]
 
 
+# Half-width used for <include> furniture. The round dining table is about
+# 1.1 m across, so 0.6 m covers it with a little to spare.
+INCLUDE_RADIUS = 0.60
+
+
 def collect_obstacles(world_path: Path, laser_height: float) -> list[dict]:
     """Every static box that the laser would actually see."""
     root = ET.parse(world_path).getroot()
@@ -98,6 +103,32 @@ def collect_obstacles(world_path: Path, laser_height: float) -> list[dict]:
                     "model": name, "x": wx, "y": wy,
                     "sx": sx, "sy": sy, "yaw": yaw,
                 })
+
+    # ------------------------------------------------------------------
+    # <include> models (furniture referenced as meshes).
+    #
+    # These were being MISSED ENTIRELY. Only <model> elements with box
+    # collision geometry were rasterised, so the five dining tables - each an
+    # <include> of a mesh - never appeared in the map. Nav2's global planner
+    # therefore routed straight through them, and the only thing that ever
+    # noticed a table was the laser clipping a thin leg at 0.2 m, far too late
+    # to plan around. The robot ended up wedged against tabletops that, as far
+    # as it knew, did not exist.
+    #
+    # A mesh has no size we can read cheaply, so each include is treated as a
+    # square of side 2 * include_radius centred on its pose. Square rather than
+    # circle is deliberate: it over-covers at the corners, which is the safe
+    # direction to err.
+    # ------------------------------------------------------------------
+    for inc in root.findall(".//include"):
+        uri = (inc.findtext("./uri") or "").strip()
+        name = (inc.findtext("./name") or uri.rsplit("/", 1)[-1] or "include")
+        ix, iy, _iz, iyaw = parse_pose(inc.findtext("./pose"))
+        side = 2.0 * INCLUDE_RADIUS
+        obstacles.append({
+            "model": f"{name} (include)", "x": ix, "y": iy,
+            "sx": side, "sy": side, "yaw": iyaw,
+        })
 
     return obstacles
 

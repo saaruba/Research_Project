@@ -1,16 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <sdf version="1.6">
   <world name="restaurant_party_hall">
-    <!-- Added by scripts/add_gazebo_ros_plugins.py -->
-    <!-- gazebo_ros_factory provides /spawn_entity. Without it, TIAGo cannot be
-         inserted into this world and every downstream system fails. -->
-    <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so">
-      <ros>
-        <namespace>/gazebo</namespace>
-      </ros>
-      <update_rate>10.0</update_rate>
-    </plugin>
-
     <gravity>0 0 -9.81</gravity>
     <physics name="restaurant_physics" type="ode">
       <max_step_size>0.001</max_step_size>

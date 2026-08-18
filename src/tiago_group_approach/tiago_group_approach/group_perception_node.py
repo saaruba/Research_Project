@@ -102,7 +102,6 @@ from rclpy.duration import Duration
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 
 import message_filters
-from cv_bridge import CvBridge
 from geometry_msgs.msg import Point, PointStamped, Pose, PoseArray
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import ColorRGBA
@@ -110,6 +109,58 @@ from visualization_msgs.msg import Marker, MarkerArray
 
 import tf2_ros
 from tf2_ros import TransformException
+
+
+# ---------------------------------------------------------------------------
+# Image conversion WITHOUT cv_bridge.
+#
+# cv_bridge's compiled boost extension was built against numpy 1.x. This
+# container has numpy 2.2.6 in ~/.local (required by pandas/scikit-learn for
+# the offline pipeline), so importing cv_bridge dies with:
+#     AttributeError: _ARRAY_API not found
+#     ImportError: numpy.core.multiarray failed to import
+# Unlike matplotlib or scipy, cv_bridge CANNOT be fixed with pip - it is a
+# compiled ROS binary, and rebuilding it against numpy 2 is far more work than
+# the 20 lines below.
+#
+# A sensor_msgs/Image is just a raw byte buffer plus a shape and an encoding
+# string, so converting it by hand is straightforward and removes an entire
+# class of dependency breakage.
+# ---------------------------------------------------------------------------
+_ENCODINGS = {
+    'rgb8':    (np.uint8,   3),
+    'bgr8':    (np.uint8,   3),
+    'rgba8':   (np.uint8,   4),
+    'bgra8':   (np.uint8,   4),
+    'mono8':   (np.uint8,   1),
+    'mono16':  (np.uint16,  1),
+    '8UC1':    (np.uint8,   1),
+    '8UC3':    (np.uint8,   3),
+    '16UC1':   (np.uint16,  1),
+    '32FC1':   (np.float32, 1),
+    '64FC1':   (np.float64, 1),
+}
+
+
+def imgmsg_to_array(msg: Image) -> np.ndarray:
+    """sensor_msgs/Image -> numpy array. Replaces cv_bridge.imgmsg_to_cv2()."""
+    if msg.encoding not in _ENCODINGS:
+        raise ValueError(f"unsupported image encoding: {msg.encoding!r}")
+    dtype, channels = _ENCODINGS[msg.encoding]
+
+    # Respect the publisher's endianness before interpreting the buffer.
+    np_dtype = np.dtype(dtype).newbyteorder('>' if msg.is_bigendian else '<')
+    data = np.frombuffer(msg.data, dtype=np_dtype)
+
+    # `step` is the row stride in BYTES and may include padding, so reshape by
+    # step and then trim - assuming width*channels would corrupt padded images.
+    itemsize = np.dtype(dtype).itemsize
+    stride = msg.step // itemsize
+    data = data.reshape(msg.height, stride)[:, :msg.width * channels]
+
+    if channels > 1:
+        data = data.reshape(msg.height, msg.width, channels)
+    return np.ascontiguousarray(data)
 
 
 class GroupPerceptionNode(Node):
@@ -130,7 +181,6 @@ class GroupPerceptionNode(Node):
         self.declare_parameter('service_url', 'http://127.0.0.1:8765')
         self.declare_parameter('oneshot', 'auto')
 
-        self.bridge = CvBridge()
         self.camera_info: CameraInfo | None = None
         self.last_process_time = 0.0
         self.model = None
@@ -185,6 +235,10 @@ class GroupPerceptionNode(Node):
         self.centroid_pub = self.create_publisher(PointStamped, '/group_centroid', 10)
         self.people_pub = self.create_publisher(PoseArray, '/detected_people', 10)
         self.marker_pub = self.create_publisher(MarkerArray, '/group_markers', 10)
+        # Annotated camera view, so you can SEE what the detector is calling a
+        # person. Add an Image display in RViz on /perception/image_annotated.
+        self.debug_image_pub = self.create_publisher(
+            Image, '/perception/image_annotated', 1)
 
         # --- Subscribers ------------------------------------------------------
         # Sensor data is best-effort; using RELIABLE here silently drops everything.
@@ -400,15 +454,19 @@ class GroupPerceptionNode(Node):
         self.last_process_time = now
 
         try:
-            rgb = self.bridge.imgmsg_to_cv2(rgb_msg, desired_encoding='bgr8')
-            depth_raw = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='passthrough')
+            rgb = imgmsg_to_array(rgb_msg)
+            # YOLO expects BGR (OpenCV convention); Gazebo publishes rgb8.
+            if rgb_msg.encoding == 'rgb8':
+                rgb = rgb[:, :, ::-1]
+            depth_raw = imgmsg_to_array(depth_msg)
         except Exception as exc:
-            self.get_logger().warn(f"cv_bridge conversion failed: {exc}")
+            self.get_logger().warn(f"image conversion failed: {exc}")
             return
 
         depth_m = self.depth_to_metres(np.asarray(depth_raw), depth_msg.encoding)
 
         detections = self.detect_people_boxes(rgb)
+        self.publish_debug_image(rgb, detections, depth_m, rgb_msg.header)
         if self.oneshot:
             # Mark done regardless of outcome, so a frame with nobody in it does
             # not cause another 25-second inference immediately afterwards.
@@ -451,6 +509,15 @@ class GroupPerceptionNode(Node):
                 self.get_logger().warn(f"TF {optical_frame}->{map_frame} failed: {exc}",
                                        throttle_duration_sec=5.0)
                 return
+
+            # Per-detection provenance. Without this a false positive is
+            # indistinguishable from a real person: the pipeline reported a
+            # confident group at (4.4, 2.8) while the only person in the world
+            # stood at (-3.0, 0.0), and nothing in the log said why.
+            self.get_logger().info(
+                f"  detection bbox=({x1:.0f},{y1:.0f})-({x2:.0f},{y2:.0f}) "
+                f"depth={depth:.2f} m  camera=({px:.2f},{py:.2f},{pz:.2f})  "
+                f"map=({in_map.point.x:.2f},{in_map.point.y:.2f})")
 
             people_map.append((in_map.point.x, in_map.point.y))
 
@@ -498,6 +565,46 @@ class GroupPerceptionNode(Node):
         self.publish_markers(people_map, centroids)
 
     # -------------------------------------------------------------- publishing
+    def publish_debug_image(self, bgr, detections, depth_m, header) -> None:
+        """
+        Republish the camera image with detection boxes drawn on it.
+
+        Worth the few milliseconds: a bounding box round a chair tells you
+        instantly what a wrong group centroid means, whereas coordinates in a
+        log leave you guessing whether perception, TF or the policy is at
+        fault.
+        """
+        # Deliberately NOT gated on subscriber count. RViz's Image display
+        # subscribes lazily, so a count of zero at the moment the first frames
+        # arrive meant nothing was ever published, the display stayed grey, and
+        # it only sprang to life after manually re-picking the topic. Drawing a
+        # few boxes on a 640x480 frame twice a second is cheap; the confusion
+        # was not.
+        try:
+            import cv2
+            img = np.ascontiguousarray(bgr.copy())
+            for (x1, y1, x2, y2) in detections:
+                d = self.person_depth(depth_m, x1, y1, x2, y2)
+                cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)),
+                              (0, 255, 0), 2)
+                label = f"person {d:.1f}m" if d is not None else "person ?m"
+                cv2.putText(img, label, (int(x1), max(15, int(y1) - 6)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+            cv2.putText(img, f"detections: {len(detections)}", (8, 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 200, 255), 2)
+
+            msg = Image()
+            msg.header = header
+            msg.height, msg.width = img.shape[0], img.shape[1]
+            msg.encoding = 'bgr8'
+            msg.is_bigendian = 0
+            msg.step = msg.width * 3
+            msg.data = img.tobytes()
+            self.debug_image_pub.publish(msg)
+        except Exception as exc:
+            self.get_logger().warn(f"debug image failed: {exc}",
+                                   throttle_duration_sec=30.0)
+
     def publish_people(self, people: list[tuple[float, float]], frame: str) -> None:
         msg = PoseArray()
         msg.header.frame_id = frame
