@@ -1,4 +1,4 @@
-<<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <sdf version="1.6">
   <world name="restaurant_party_hall">
     <!-- Added by scripts/add_gazebo_ros_plugins.py -->
@@ -431,3 +431,4 @@
 
   </world>
 </sdf>
+
