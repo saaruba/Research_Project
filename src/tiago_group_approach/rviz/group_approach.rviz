@@ -8,234 +8,610 @@ Panels:
         - /What the robot sees1
         - /What the robot thinks1
       Splitter Ratio: 0.5
-    Tree Height: 620
+    Tree Height: 169
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
     Name: Views
     Splitter Ratio: 0.5
-
 Visualization Manager:
   Class: ""
-  Name: root
+  Displays:
+    - Alpha: 0.30000001192092896
+      Cell Size: 1
+      Class: rviz_default_plugins/Grid
+      Color: 100; 100; 100
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 20
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        arm_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_4_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_5_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_6_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_7_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        arm_tool_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_antenna_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_antenna_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_cover_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_dock_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_laser_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_mic_back_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_mic_back_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_mic_front_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_mic_front_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_sonar_01_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_sonar_02_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_sonar_03_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_back_left_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_back_left_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_back_right_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_back_right_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_front_left_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_front_left_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_front_right_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_front_right_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_grasping_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        gripper_left_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_right_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_tool_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        head_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        head_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        head_front_camera_color_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        head_front_camera_color_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        head_front_camera_depth_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        head_front_camera_depth_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        head_front_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        head_front_camera_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        head_front_camera_orbbec_aux_joint_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        suspension_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        suspension_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        torso_fixed_column_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        torso_fixed_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        torso_lift_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wheel_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wheel_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wrist_ft_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wrist_ft_tool_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: TIAGo
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz_common/Group
+      Displays:
+        - Class: rviz_default_plugins/Image
+          Enabled: false
+          Max Value: 1
+          Median window: 5
+          Min Value: 0
+          Name: DETECTIONS (annotated)
+          Normalize Range: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /perception/image_annotated
+          Value: false
+        - Class: rviz_default_plugins/Image
+          Enabled: true
+          Max Value: 1
+          Median window: 5
+          Min Value: 0
+          Name: RGB camera
+          Normalize Range: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Best Effort
+            Value: /head_front_camera/rgb/image_raw
+          Value: true
+        - Class: rviz_default_plugins/Image
+          Enabled: true
+          Max Value: 8
+          Median window: 5
+          Min Value: 0
+          Name: Depth camera
+          Normalize Range: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Best Effort
+            Value: /head_front_camera/depth/image_raw
+          Value: true
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 10
+            Min Value: -10
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz_default_plugins/PointCloud2
+          Color: 255; 255; 255
+          Color Transformer: RGB8
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 4096
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: Depth cloud
+          Position Transformer: XYZ
+          Selectable: true
+          Size (Pixels): 3
+          Size (m): 0.014999999664723873
+          Style: Points
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Best Effort
+            Value: /head_front_camera/depth/rgb/points
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: true
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 10
+            Min Value: -10
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz_default_plugins/LaserScan
+          Color: 255; 85; 0
+          Color Transformer: FlatColor
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 4096
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: LiDAR
+          Position Transformer: XYZ
+          Selectable: true
+          Size (Pixels): 3
+          Size (m): 0.029999999329447746
+          Style: Spheres
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Best Effort
+            Value: /scan_raw
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: true
+      Enabled: true
+      Name: What the robot sees
+    - Class: rviz_common/Group
+      Displays:
+        - Class: rviz_default_plugins/MarkerArray
+          Enabled: true
+          Name: Groups and O-space
+          Namespaces:
+            group_centre: true
+            ospace: true
+            people: true
+          Topic:
+            Depth: 100
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /group_markers
+          Value: true
+        - Alpha: 1
+          Arrow Length: 0.30000001192092896
+          Axes Length: 0.30000001192092896
+          Axes Radius: 0.009999999776482582
+          Class: rviz_default_plugins/PoseArray
+          Color: 0; 170; 255
+          Enabled: true
+          Head Length: 0.07000000029802322
+          Head Radius: 0.029999999329447746
+          Name: Detected people
+          Shaft Length: 0.23000000417232513
+          Shaft Radius: 0.009999999776482582
+          Shape: Arrow (Flat)
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /detected_people
+          Value: true
+      Enabled: true
+      Name: What the robot thinks
+    - Alpha: 0.6000000238418579
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic:
+        Depth: 1
+        Durability Policy: Transient Local
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map_updates
+      Use Timestamp: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 0; 255; 127
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Nav2 plan
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /plan
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/Polygon
+      Color: 255; 255; 0
+      Enabled: true
+      Name: Robot footprint
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /local_costmap/published_footprint
+      Value: true
+    - Class: rviz_default_plugins/TF
+      Enabled: false
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+      Marker Scale: 0.5
+      Name: TF
+      Show Arrows: false
+      Show Axes: true
+      Show Names: true
+      Tree:
+        {}
+      Update Interval: 0
+      Value: false
+  Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Fixed Frame: map
     Frame Rate: 15
-  Displays:
-
-    - Class: rviz_default_plugins/Grid
-      Name: Grid
-      Enabled: true
-      Cell Size: 1
-      Color: 100; 100; 100
-      Plane: XY
-      Plane Cell Count: 20
-      Reference Frame: <Fixed Frame>
-      Alpha: 0.3
-
-    - Class: rviz_default_plugins/RobotModel
-      Name: TIAGo
-      Enabled: true
-      Description Topic:
-        Value: /robot_description
-        Depth: 5
-        Durability Policy: Transient Local
-        Reliability Policy: Reliable
-      Alpha: 1
-      Visual Enabled: true
-      Collision Enabled: false
-
-    # ------------------------------------------------------------------
-    # WHAT THE ROBOT SEES - raw sensor streams
-    # ------------------------------------------------------------------
-    - Class: rviz_common/Group
-      Name: What the robot sees
-      Enabled: true
-      Displays:
-
-        # The detector's own view, with green boxes and distances drawn on.
-        # FIRST and enabled by default: this is the display that answers
-        # "is it actually seeing the person?" without any guesswork.
-        - Class: rviz_default_plugins/Image
-          Name: DETECTIONS (annotated)
-          Enabled: true
-          Topic:
-            Value: /perception/image_annotated
-            Depth: 5
-            Durability Policy: Volatile
-            Reliability Policy: Reliable
-          Max Value: 1
-          Min Value: 0
-          Normalize Range: true
-
-        - Class: rviz_default_plugins/Image
-          Name: RGB camera
-          Enabled: false
-          Topic:
-            Value: /head_front_camera/rgb/image_raw
-            Depth: 5
-            Durability Policy: Volatile
-            Reliability Policy: Best Effort
-          Max Value: 1
-          Min Value: 0
-          Normalize Range: true
-
-        - Class: rviz_default_plugins/Image
-          Name: Depth camera
-          Enabled: false
-          Topic:
-            Value: /head_front_camera/depth/image_raw
-            Depth: 5
-            Durability Policy: Volatile
-            Reliability Policy: Best Effort
-          Max Value: 8
-          Min Value: 0
-          Normalize Range: false
-
-        - Class: rviz_default_plugins/PointCloud2
-          Name: Depth cloud
-          Enabled: true
-          Topic:
-            Value: /head_front_camera/depth/rgb/points
-            Depth: 5
-            Durability Policy: Volatile
-            Reliability Policy: Best Effort
-          Alpha: 1
-          Size (m): 0.015
-          Style: Points
-          Color Transformer: RGB8
-          Decay Time: 0
-
-        - Class: rviz_default_plugins/LaserScan
-          Name: LiDAR
-          Enabled: true
-          Topic:
-            Value: /scan_raw
-            Depth: 5
-            Durability Policy: Volatile
-            Reliability Policy: Best Effort
-          Alpha: 1
-          Size (m): 0.03
-          Style: Spheres
-          Color: 255; 85; 0
-          Color Transformer: FlatColor
-          Decay Time: 0
-
-    # ------------------------------------------------------------------
-    # WHAT THE ROBOT THINKS - this project's own perception output
-    # ------------------------------------------------------------------
-    - Class: rviz_common/Group
-      Name: What the robot thinks
-      Enabled: true
-      Displays:
-
-        # Blue cylinders = detected people, red sphere = group centre,
-        # translucent disc = estimated O-space. Published by
-        # group_perception_node.
-        - Class: rviz_default_plugins/MarkerArray
-          Name: Groups and O-space
-          Enabled: true
-          Topic:
-            Value: /group_markers
-            Depth: 100
-            Durability Policy: Volatile
-            Reliability Policy: Reliable
-          Namespaces:
-            {}
-
-        - Class: rviz_default_plugins/PoseArray
-          Name: Detected people
-          Enabled: true
-          Topic:
-            Value: /detected_people
-            Depth: 5
-            Durability Policy: Volatile
-            Reliability Policy: Reliable
-          Color: 0; 170; 255
-          Alpha: 1
-          Shape: Arrow (Flat)
-          Arrow Length: 0.3
-
-    # ------------------------------------------------------------------
-    # NAVIGATION
-    # ------------------------------------------------------------------
-    - Class: rviz_default_plugins/Map
-      Name: Map
-      Enabled: true
-      Topic:
-        Value: /map
-        Depth: 1
-        Durability Policy: Transient Local
-        Reliability Policy: Reliable
-      Alpha: 0.6
-      Color Scheme: map
-
-    - Class: rviz_default_plugins/Path
-      Name: Nav2 plan
-      Enabled: true
-      Topic:
-        Value: /plan
-        Depth: 5
-        Durability Policy: Volatile
-        Reliability Policy: Reliable
-      Color: 0; 255; 127
-      Line Style: Lines
-      Alpha: 1
-
-    - Class: rviz_default_plugins/Polygon
-      Name: Robot footprint
-      Enabled: true
-      Topic:
-        Value: /local_costmap/published_footprint
-        Depth: 5
-        Durability Policy: Volatile
-        Reliability Policy: Reliable
-      Color: 255; 255; 0
-      Alpha: 1
-
-    - Class: rviz_default_plugins/TF
-      Name: TF
-      Enabled: false
-      Marker Scale: 0.5
-      Show Names: true
-      Show Axes: true
-      Show Arrows: false
-
+  Name: root
   Tools:
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
     - Class: rviz_default_plugins/SetInitialPose
+      Covariance x: 0.25
+      Covariance y: 0.25
+      Covariance yaw: 0.06853891909122467
       Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
         Value: /initialpose
     - Class: rviz_default_plugins/SetGoal
       Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
         Value: /goal_pose
     - Class: rviz_default_plugins/Measure
-
+      Line color: 128; 128; 0
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Name: Current View
       Distance: 14
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
       Focal Point:
         X: -2
         Y: 2
         Z: 0
-      Pitch: 0.85
-      Yaw: 5.5
-      Near Clip Distance: 0.01
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.8500000238418579
       Target Frame: <Fixed Frame>
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 5.5
     Saved: ~
-
 Window Geometry:
-  Height: 900
-  Width: 1500
-  Displays:
-    collapsed: false
-  Views:
-    collapsed: false
-  RGB camera:
+  DETECTIONS (annotated):
     collapsed: false
   Depth camera:
     collapsed: false
+  Displays:
+    collapsed: false
+  Height: 669
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd00000001000000000000019b00000247fc0200000005fb00000014005200470042002000630061006d006500720061010000003b0000004d0000002800fffffffb0000002c0044004500540045004300540049004f004e0053002000280061006e006e006f0074006100740065006400290200000351000000ed0000019b00000157fb0000001800440065007000740068002000630061006d006500720061010000008e0000004d0000002800fffffffb000000100044006900730070006c00610079007301000000e1000000e4000000c700fffffffb0000000a0056006900650077007301000001cb000000b7000000a000ffffff0000035f0000024700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  RGB camera:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1280
+  X: 0
+  Y: 27
