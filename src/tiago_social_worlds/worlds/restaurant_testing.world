@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <sdf version="1.6">
+
   <world name="restaurant_party_hall">
     <!-- Added by scripts/add_gazebo_ros_plugins.py -->
     <!-- gazebo_ros_factory provides /spawn_entity. Without it, TIAGo cannot be
@@ -11,423 +13,855 @@
       <update_rate>10.0</update_rate>
     </plugin>
 
+
+    <!-- ===================================================== -->
+    <!-- PHYSICS                                               -->
+    <!-- ===================================================== -->
+
     <gravity>0 0 -9.81</gravity>
+
     <physics name="restaurant_physics" type="ode">
       <max_step_size>0.001</max_step_size>
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
+
+
+    <!-- ===================================================== -->
+    <!-- SCENE / LIGHTING                                      -->
+    <!-- ===================================================== -->
+
     <scene>
       <ambient>0.28 0.28 0.28 1</ambient>
       <background>0.30 0.32 0.35 1</background>
       <shadows>false</shadows>
     </scene>
+
+
     <light name="sun" type="directional">
+
       <cast_shadows>false</cast_shadows>
+
       <pose>0 0 12 0 0 0</pose>
+
       <diffuse>0.55 0.55 0.52 1</diffuse>
+
       <specular>0.06 0.06 0.06 1</specular>
+
       <direction>-0.4 0.2 -1.0</direction>
+
     </light>
-    <!-- Restaurant shell: 20 m x 15 m, 2 m entrance gap in south wall. -->
+
+
+    <!-- ===================================================== -->
+    <!-- RESTAURANT FLOOR                                      -->
+    <!-- 20 m X 15 m                                          -->
+    <!-- ===================================================== -->
+
     <model name="restaurant_floor">
+
       <static>true</static>
+
       <pose>0 0 -0.05 0 0 0</pose>
+
       <link name="floor_link">
+
         <collision name="floor_collision">
+
           <geometry>
             <box>
               <size>20 15 0.10</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="floor_visual">
+
           <geometry>
             <box>
               <size>20 15 0.10</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/Wood</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
+
+
+    <!-- ===================================================== -->
+    <!-- NORTH WALL                                            -->
+    <!-- ===================================================== -->
+
     <model name="north_wall">
+
       <static>true</static>
+
       <pose>0 7.40 1.50 0 0 0</pose>
+
       <link name="wall_link">
+
         <collision name="wall_collision">
+
           <geometry>
             <box>
               <size>20 0.20 3.00</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="wall_visual">
+
           <geometry>
             <box>
               <size>20 0.20 3.00</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/White</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
+
+
+    <!-- ===================================================== -->
+    <!-- EAST WALL                                             -->
+    <!-- ===================================================== -->
+
     <model name="east_wall">
+
       <static>true</static>
+
       <pose>9.90 0 1.50 0 0 0</pose>
+
       <link name="wall_link">
+
         <collision name="wall_collision">
+
           <geometry>
             <box>
               <size>0.20 15 3.00</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="wall_visual">
+
           <geometry>
             <box>
               <size>0.20 15 3.00</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/White</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
+
+
+    <!-- ===================================================== -->
+    <!-- WEST WALL                                             -->
+    <!-- ===================================================== -->
+
     <model name="west_wall">
+
       <static>true</static>
+
       <pose>-9.90 0 1.50 0 0 0</pose>
+
       <link name="wall_link">
+
         <collision name="wall_collision">
+
           <geometry>
             <box>
               <size>0.20 15 3.00</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="wall_visual">
+
           <geometry>
             <box>
               <size>0.20 15 3.00</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/White</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
+
+
+    <!-- ===================================================== -->
+    <!-- SOUTH WALL LEFT                                       -->
+    <!-- ===================================================== -->
+
     <model name="south_wall_left">
+
       <static>true</static>
+
       <pose>-5.50 -7.40 1.50 0 0 0</pose>
+
       <link name="wall_link">
+
         <collision name="wall_collision">
+
           <geometry>
             <box>
               <size>9.00 0.20 3.00</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="wall_visual">
+
           <geometry>
             <box>
               <size>9.00 0.20 3.00</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/White</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
+
+
+    <!-- ===================================================== -->
+    <!-- SOUTH WALL RIGHT                                      -->
+    <!-- ===================================================== -->
+
     <model name="south_wall_right">
+
       <static>true</static>
+
       <pose>5.50 -7.40 1.50 0 0 0</pose>
+
       <link name="wall_link">
+
         <collision name="wall_collision">
+
           <geometry>
             <box>
               <size>9.00 0.20 3.00</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="wall_visual">
+
           <geometry>
             <box>
               <size>9.00 0.20 3.00</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/White</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
-    <!-- Kitchen enclosure in the north-west corner, with a doorway gap. -->
+
+
+    <!-- ===================================================== -->
+    <!-- KITCHEN EAST PARTITION                                -->
+    <!-- ===================================================== -->
+
     <model name="kitchen_east_partition">
+
       <static>true</static>
+
       <pose>-6.20 4.75 1.40 0 0 0</pose>
+
       <link name="partition_link">
+
         <collision name="partition_collision">
+
           <geometry>
             <box>
               <size>0.15 5.30 2.80</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="partition_visual">
+
           <geometry>
             <box>
               <size>0.15 5.30 2.80</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/Grey</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
+
+
+    <!-- ===================================================== -->
+    <!-- KITCHEN SOUTH PARTITION LEFT                          -->
+    <!-- ===================================================== -->
+
     <model name="kitchen_south_partition_left">
+
       <static>true</static>
+
       <pose>-9.20 2.10 1.40 0 0 0</pose>
+
       <link name="partition_link">
+
         <collision name="partition_collision">
+
           <geometry>
             <box>
               <size>1.40 0.15 2.80</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="partition_visual">
+
           <geometry>
             <box>
               <size>1.40 0.15 2.80</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/Grey</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
+
+
+    <!-- ===================================================== -->
+    <!-- KITCHEN SOUTH PARTITION RIGHT                         -->
+    <!-- ===================================================== -->
+
     <model name="kitchen_south_partition_right">
+
       <static>true</static>
+
       <pose>-6.65 2.10 1.40 0 0 0</pose>
+
       <link name="partition_link">
+
         <collision name="partition_collision">
+
           <geometry>
             <box>
               <size>0.90 0.15 2.80</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="partition_visual">
+
           <geometry>
             <box>
               <size>0.90 0.15 2.80</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/Grey</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
-    <!-- Stage remains unchanged; furniture and stage objects can be added later. -->
+
+
+    <!-- ===================================================== -->
+    <!-- STAGE                                                 -->
+    <!-- ===================================================== -->
+
     <model name="restaurant_stage">
+
       <static>true</static>
+
       <pose>7.45 5.20 0.15 0 0 0</pose>
+
       <link name="stage_link">
+
         <collision name="stage_collision">
+
           <geometry>
             <box>
               <size>4.50 3.60 0.30</size>
             </box>
           </geometry>
+
         </collision>
+
+
         <visual name="stage_visual">
+
           <geometry>
             <box>
               <size>4.50 3.60 0.30</size>
             </box>
           </geometry>
+
           <material>
+
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/Wood</name>
             </script>
+
           </material>
+
         </visual>
+
       </link>
+
     </model>
+
+
+    <!-- ===================================================== -->
+    <!-- CAMERA                                                -->
+    <!-- ===================================================== -->
+
     <gui fullscreen="0">
+
       <camera name="restaurant_overview_camera">
+
         <pose>0 -21 17 0 0.62 1.57</pose>
+
         <view_controller>orbit</view_controller>
+
       </camera>
+
     </gui>
-    <!-- 24 talking actors: six four-person F-formation groups. -->
-    <!-- GROUP 1 centre (-3.5, 4.7) -->
-    <!-- DEVELOPMENT POPULATION: 15 humans = 12 talking (3 groups of 4) + 3 walking; no seated actors. -->
-    
+
+
     <!-- ===================================================== -->
-    <!-- FINAL HUMAN POPULATION                                -->
-    <!-- 7 humans total: 3 talking, 3 standing, 1 walking     -->
+    <!-- TABLES                                                -->
     <!-- ===================================================== -->
 
-    <!-- GROUP 1: P1(-3,0), P2(-3,-1), P3(-4,0) -->
 
-    <actor name="group_01_person_01_talking">
+    <!-- TABLE 1 : (-4,-1) -->
+
+    <include>
+
+      <uri>
+        model://free-wooden-round-dining-table-3d-model
+      </uri>
+
+      <name>restaurant_table_01</name>
+
+      <pose>-4 -1 0 0 0 0</pose>
+
+      <static>true</static>
+
+    </include>
+
+
+    <!-- TABLE 2 : (-1,+4) -->
+
+    <include>
+
+      <uri>
+        model://free-wooden-round-dining-table-3d-model
+      </uri>
+
+      <name>restaurant_table_02</name>
+
+      <pose>-1 4 0 0 0 0</pose>
+
+      <static>true</static>
+
+    </include>
+
+
+    <!-- TABLE 3 : (+2,-2) -->
+
+    <include>
+
+      <uri>
+        model://free-wooden-round-dining-table-3d-model
+      </uri>
+
+      <name>restaurant_table_03</name>
+
+      <pose>2 -2 0 0 0 0</pose>
+
+      <static>true</static>
+
+    </include>
+
+
+    <!-- TABLE 4 : (+6,+1) -->
+
+    <include>
+
+      <uri>
+        model://free-wooden-round-dining-table-3d-model
+      </uri>
+
+      <name>restaurant_table_04</name>
+
+      <pose>6 1 0 0 0 0</pose>
+
+      <static>true</static>
+
+    </include>
+
+
+    <!-- TABLE 5 : (+5,-4) -->
+
+    <include>
+
+      <uri>
+        model://free-wooden-round-dining-table-3d-model
+      </uri>
+
+      <name>restaurant_table_05</name>
+
+      <pose>5 -4 0 0 0 0</pose>
+
+      <static>true</static>
+
+    </include>
+
+
+    <!-- ===================================================== -->
+    <!-- HUMAN GROUP 1                                        -->
+    <!--                                                      -->
+    <!-- Person 1 = (-3, 0)                                   -->
+    <!-- Person 2 = (-3,-1)                                   -->
+    <!-- Person 3 = (-4, 0)                                   -->
+    <!--                                                      -->
+    <!-- Group centre approximately (-3.33,-0.33)              -->
+    <!-- ===================================================== -->
+
+
+    <!-- ===================================================== -->
+    <!-- GROUP 1 - PERSON 1 - TALKING                          -->
+    <!-- Position (-3,0)                                      -->
+    <!-- Faces group centre                                   -->
+    <!-- ===================================================== -->
+
+
+
+    <!-- ===================================================== -->
+    <!-- FINAL SINGLE HUMAN GROUP - 5 PEOPLE                  -->
+    <!--                                                      -->
+    <!-- Person 1 = (-2,-1)  STATIC                           -->
+    <!-- Person 2 = (-2,-2)  STATIC                           -->
+    <!-- Person 3 = (-3,-3)  STATIC                           -->
+    <!-- Person 4 = (-4,-3)  TALKING                          -->
+    <!-- Person 5 = (-5,-1)  TALKING                          -->
+    <!--                                                      -->
+    <!-- Approx. group centre = (-3.2,-2.0)                   -->
+    <!-- Every top-level actor pose is a REAL world pose.     -->
+    <!-- No human is placed at the world origin (0,0).        -->
+    <!-- ===================================================== -->
+
+    <!-- PERSON 1 - STATIC -->
+    <actor name="final_group_person_01_static">
       <pose>0 0 0 0 0 0</pose>
       <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
         <scale>1.0</scale>
       </skin>
+
       <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
         <scale>1.0</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
+
       <script>
         <loop>true</loop>
         <delay_start>0.0</delay_start>
         <auto_start>true</auto_start>
-        <trajectory id="101" type="talk">
-          <waypoint><time>0</time><pose>-3 0 0 0 0 -2.3562</pose></waypoint>
-          <waypoint><time>30</time><pose>-3 0 0 0 0 -2.3562</pose></waypoint>
+
+        <trajectory id="501" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-2 -2). -->
+          <waypoint>
+            <time>0</time>
+            <pose>-3 -2 0 0 0 -0.7854</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>-3 -2 0 0 0 -0.7854</pose>
+          </waypoint>
         </trajectory>
       </script>
     </actor>
 
-    <actor name="group_01_person_02_standing">
-      <pose>-3 -1 0 0 0 2.0344</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.0</scale>
-      </skin>
-    </actor>
 
-    <actor name="group_01_person_03_talking">
+    <!-- PERSON 2 - STATIC -->
+    <actor name="final_group_person_02_static">
       <pose>0 0 0 0 0 0</pose>
       <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
         <scale>1.0</scale>
       </skin>
+
       <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
         <scale>1.0</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
+
       <script>
         <loop>true</loop>
-        <delay_start>0.6</delay_start>
+        <delay_start>0.0</delay_start>
         <auto_start>true</auto_start>
-        <trajectory id="102" type="talk">
-          <waypoint><time>0</time><pose>-4 0 0 0 0 -0.4636</pose></waypoint>
-          <waypoint><time>30</time><pose>-4 0 0 0 0 -0.4636</pose></waypoint>
+
+        <trajectory id="501" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-3,-3). -->
+          <waypoint>
+            <time>0</time>
+            <pose>-3 -3 0 0 0 -2.2000</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>-3 -3 0 0 0 -2.2000</pose>
+          </waypoint>
         </trajectory>
       </script>
     </actor>
 
-    <!-- GROUP 2: P1(-1,5), P2(0,5), P3(0,4), P4(-2,5) -->
 
-    <actor name="group_02_person_01_standing">
-      <pose>-1 5 0 0 0 -0.7854</pose>
+    <!-- PERSON 3 - TALKING -->
+    <actor name="final_group_person_04_talking">
+      <pose>0 0 0 0 0 0</pose>
+
+      <skin>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_2/talk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="talk">
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_2/talk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>false</interpolate_x>
+      </animation>
+
+      <script>
+        <loop>true</loop>
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+
+        <trajectory id="501" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-4,-3). -->
+          <waypoint>
+            <time>0</time>
+            <pose>-4 -3 0 0 0 2.0000</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>-4 -3 0 0 0 2.0000</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+
+    <!-- PERSON 4 - TALKING -->
+    <actor name="final_group_person_05_talking">
+      <pose>0 0 0 0 0 0</pose>
+
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
         <scale>1.0</scale>
       </skin>
-    </actor>
 
-    <actor name="group_02_person_02_talking">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
-        <scale>1.0</scale>
-      </skin>
       <animation name="talk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
         <scale>1.0</scale>
         <interpolate_x>false</interpolate_x>
       </animation>
+
       <script>
         <loop>true</loop>
-        <delay_start>1.0</delay_start>
+        <delay_start>0.7</delay_start>
         <auto_start>true</auto_start>
-        <trajectory id="103" type="talk">
-          <waypoint><time>0</time><pose>0 5 0 0 0 -2.8198</pose></waypoint>
-          <waypoint><time>30</time><pose>0 5 0 0 0 -2.8198</pose></waypoint>
+
+        <trajectory id="502" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-5,-1). -->
+          <waypoint>
+            <time>0</time>
+            <pose>-4 -2 0 0 0 0.17900</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>-4 -2 0 0 0 0.17900</pose>
+          </waypoint>
         </trajectory>
       </script>
     </actor>
 
-    <actor name="group_02_person_03_standing">
-      <pose>0 4 0 0 0 2.3562</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_3/talk.dae</filename>
-        <scale>1.0</scale>
-      </skin>
-    </actor>
 
-    <actor name="group_02_person_04_walking">
-      <pose>0 0 0 0 0 0</pose>
-      <skin>
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/walk.dae</filename>
-        <scale>1.0</scale>
-      </skin>
-      <animation name="walk">
-        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/walk.dae</filename>
-        <scale>1.0</scale>
-        <interpolate_x>true</interpolate_x>
-      </animation>
-      <script>
-        <loop>true</loop>
-        <delay_start>1.5</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="104" type="walk">
-          <tension>0</tension>
-          <waypoint><time>0</time><pose>-2 5 0 0 0 -0.1974</pose></waypoint>
-          <waypoint><time>5</time><pose>-0.5 5.8 0 0 0 0.4900</pose></waypoint>
-          <waypoint><time>10</time><pose>1.0 5.8 0 0 0 0</pose></waypoint>
-          <waypoint><time>15</time><pose>1.2 4.6 0 0 0 -1.4056</pose></waypoint>
-          <waypoint><time>20</time><pose>0.5 3.7 0 0 0 -2.2320</pose></waypoint>
-          <waypoint><time>25</time><pose>-1.0 3.7 0 0 0 3.1416</pose></waypoint>
-          <waypoint><time>30</time><pose>-2.0 4.4 0 0 0 2.5307</pose></waypoint>
-          <waypoint><time>35</time><pose>-2 5 0 0 0 1.5708</pose></waypoint>
-        </trajectory>
-      </script>
-    </actor>
+
+    <!-- ===================================================== -->
+    <!-- BUFFET / SERVICE COUNTER                              -->
+    <!-- South-west side of restaurant                         -->
+    <!-- Centre: (-5.5, -6.0), yaw = +90 deg                  -->
+    <!-- Approx. long-axis coverage: X ~= -7.5 to -3.5         -->
+    <!-- ===================================================== -->
+
+    <include>
+      <uri>model://Buffet</uri>
+      <name>restaurant_buffet_01</name>
+      <pose>-5.5 -6.0 0 0 0 1.5708</pose>
+      <static>true</static>
+    </include>
+
+
+    <!-- ===================================================== -->
+    <!-- RESTAURANT DECORATIVE PLANTS                          -->
+    <!-- ===================================================== -->
+
+    <!-- PLANT 1 : (-7, +2) -->
+    <include>
+      <uri>model://low-poly-plant-in-a-pot</uri>
+      <name>restaurant_plant_01</name>
+      <pose>-7 2 0 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- PLANT 2 : (+1, -7) -->
+    <include>
+      <uri>model://low-poly-plant-in-a-pot</uri>
+      <name>restaurant_plant_02</name>
+      <pose>1 -7 0 0 0 0.70</pose>
+      <static>true</static>
+    </include>
+
+    <!-- PLANT 3 : (-1, -7) -->
+    <include>
+      <uri>model://low-poly-plant-in-a-pot</uri>
+      <name>restaurant_plant_03</name>
+      <pose>-1 -7 0 0 0 -0.50</pose>
+      <static>true</static>
+    </include>
+
+    <!-- PLANT 4 : (+10, -1) -->
+    <include>
+      <uri>model://low-poly-plant-in-a-pot</uri>
+      <name>restaurant_plant_04</name>
+      <pose>10 -1 0 0 0 1.20</pose>
+      <static>true</static>
+    </include>
+
+    <!-- PLANT 5 : (-5, +7) -->
+    <include>
+      <uri>model://low-poly-plant-in-a-pot</uri>
+      <name>restaurant_plant_05</name>
+      <pose>-5 7 0 0 0 -1.00</pose>
+      <static>true</static>
+    </include>
 
   </world>
+
 </sdf>
+
