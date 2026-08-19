@@ -53,7 +53,7 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
 
-from geometry_msgs.msg import PointStamped, PoseStamped
+from geometry_msgs.msg import PointStamped, PoseArray, PoseStamped
 from nav2_msgs.action import NavigateToPose
 
 import tf2_ros
@@ -78,6 +78,21 @@ class GroupApproachBaselineNode(Node):
         self.declare_parameter('goal_update_threshold_m', 0.40)
         self.declare_parameter('min_goal_interval_s', 3.0)
 
+        # --- Personal-space clearance ----------------------------------------
+        # The standoff alone is not enough. It is measured from the group
+        # CENTROID, and the centroid is computed from whoever the camera can
+        # currently see. With a group of four and only two visible, the
+        # centroid sits off to one side, and a point 1.2 m from it can land
+        # *inside* the real group. Measured in a live run: O-space intrusion
+        # true, closest approach 0.43 m - inside intimate distance.
+        #
+        # So the chosen pose is now also checked against EVERY detected person
+        # individually, and pushed back along the approach line until it clears
+        # them all.
+        self.declare_parameter('min_person_clearance', 1.0)
+        self.declare_parameter('max_standoff', 3.0)
+
+        self._people: list[tuple[float, float]] = []
         self._goal_in_flight = False
         self._last_goal_xy = None
         self._last_goal_time = 0.0
@@ -86,6 +101,11 @@ class GroupApproachBaselineNode(Node):
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         self.nav_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+
+        # Individual people, so the goal can be checked against each of them
+        # rather than only against the group's average position.
+        self.create_subscription(
+            PoseArray, '/detected_people', self.people_callback, 10)
 
         self.subscription = self.create_subscription(
             PointStamped,
@@ -99,6 +119,10 @@ class GroupApproachBaselineNode(Node):
             f'standoff_distance={self.get_parameter("standoff_distance").value} m. '
             'Waiting for a group centroid on /group_centroid...'
         )
+
+    def people_callback(self, msg: PoseArray) -> None:
+        """Latest individual person positions, in the map frame."""
+        self._people = [(p.position.x, p.position.y) for p in msg.poses]
 
     def get_robot_position(self):
         map_frame = self.get_parameter('map_frame').value
@@ -127,9 +151,35 @@ class GroupApproachBaselineNode(Node):
         unit_x = direction_x / distance
         unit_y = direction_y / distance
 
-        # Stand `standoff` metres short of the centroid, outside its O-space.
+        # Stand `standoff` metres short of the centroid, outside its O-space...
         approach_x = group_x - unit_x * standoff
         approach_y = group_y - unit_y * standoff
+
+        # ...then back off further, if that spot crowds anybody.
+        #
+        # Walk outward along the same approach line in 10 cm steps until the
+        # pose clears every detected person by min_person_clearance. This keeps
+        # the rule's character - approach along the line of sight, stop short,
+        # face the group - while making it respect the people who define the
+        # O-space rather than only their average position.
+        clearance = self.get_parameter('min_person_clearance').value
+        max_standoff = self.get_parameter('max_standoff').value
+        if self._people:
+            extra = 0.0
+            while standoff + extra <= max_standoff:
+                cx = group_x - unit_x * (standoff + extra)
+                cy = group_y - unit_y * (standoff + extra)
+                nearest = min(math.dist((cx, cy), p) for p in self._people)
+                if nearest >= clearance:
+                    break
+                extra += 0.1
+            if extra > 0.0:
+                approach_x = group_x - unit_x * (standoff + extra)
+                approach_y = group_y - unit_y * (standoff + extra)
+                self.get_logger().info(
+                    f'Backed off an extra {extra:.1f} m: the {standoff:.1f} m '
+                    f'pose was within {clearance:.1f} m of a person '
+                    f'({len(self._people)} detected).')
 
         # Face back toward the group centre.
         facing_yaw = math.atan2(group_y - approach_y, group_x - approach_x)

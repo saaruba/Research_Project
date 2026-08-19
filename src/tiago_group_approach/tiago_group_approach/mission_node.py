@@ -68,6 +68,10 @@ class MissionNode(Node):
         self.declare_parameter('robot_frame', 'base_link')
         self.declare_parameter('stop_on_complete', True)
         self.declare_parameter('pause_for_approach', True)
+        # Hard ceiling on how long the mission will wait for one approach.
+        # Without it a robot parked in front of a group re-arms the pause
+        # forever and the tour never continues.
+        self.declare_parameter('max_approach_time', 90.0)
 
         flat = list(self.get_parameter('waypoints').value)
         self.waypoints = [(flat[i], flat[i + 1])
@@ -84,6 +88,9 @@ class MissionNode(Node):
         self.group_sightings = 0
         self.group_positions: list[tuple[float, float]] = []
         self.approach_paused_until = 0.0
+        self.visited: list[tuple[float, float]] = []   # groups already approached
+        self.approach_started: float | None = None
+        self.approach_target: tuple[float, float] | None = None
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
@@ -114,12 +121,53 @@ class MissionNode(Node):
 
     def on_group(self, msg: PointStamped) -> None:
         self.group_sightings += 1
-        self.group_positions.append((msg.point.x, msg.point.y))
-        # Let the approach policy drive for a while: it and this node both send
-        # goals to the same Nav2 server, and whichever sends last wins. Without
-        # this pause the mission would immediately preempt every approach.
-        if self.get_parameter('pause_for_approach').value:
-            self.approach_paused_until = self.now_s() + 20.0
+        pos = (msg.point.x, msg.point.y)
+        self.group_positions.append(pos)
+
+        if not self.get_parameter('pause_for_approach').value:
+            return
+
+        # ------------------------------------------------------------------
+        # Approach ONCE per group, then move on.
+        #
+        # This used to just push the pause 20 s into the future on every
+        # detection. Since the robot ends its approach parked in front of the
+        # group, it kept seeing them, kept re-arming the pause, and the tour
+        # never resumed - it simply stood there indefinitely. Observed
+        # directly: the robot reached the group and stayed put for the rest of
+        # the run.
+        #
+        # Two changes fix it. A group already visited is ignored, so it cannot
+        # re-trigger a pause; and any single approach is capped in wall time,
+        # so even an approach that never converges cannot stall the mission.
+        # ------------------------------------------------------------------
+        if self.already_visited(pos):
+            return
+
+        now = self.now_s()
+        if self.approach_started is None:
+            self.approach_started = now
+            self.approach_target = pos
+            self.get_logger().info(
+                f'New group at ({pos[0]:.2f}, {pos[1]:.2f}) - pausing the '
+                f'mission to approach it.')
+
+        limit = self.get_parameter('max_approach_time').value
+        if now - self.approach_started > limit:
+            self.get_logger().info(
+                f'Approach time limit ({limit:.0f}s) reached - marking this '
+                'group as visited and resuming the tour.')
+            self.visited.append(self.approach_target or pos)
+            self.approach_started = None
+            self.approach_target = None
+            self.approach_paused_until = 0.0
+            return
+
+        self.approach_paused_until = now + 5.0
+
+    def already_visited(self, pos) -> bool:
+        return any(math.hypot(pos[0] - v[0], pos[1] - v[1]) < 2.0
+                   for v in self.visited)
 
     # -------------------------------------------------------------- main loop
     def tick(self) -> None:
@@ -242,6 +290,7 @@ class MissionNode(Node):
         log.info('=' * 60)
         log.info(f'  waypoints visited     : {self.index}/{len(self.waypoints)}')
         log.info(f'  group sightings       : {self.group_sightings}')
+        log.info(f'  groups approached     : {len(self.visited)}')
         log.info(f'  distinct group locations: {len(unique)}')
         for i, (x, y, n) in enumerate(unique, 1):
             log.info(f'      group {i}: ({x:.2f}, {y:.2f})  seen {n} times')
