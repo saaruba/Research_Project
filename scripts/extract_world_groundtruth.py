@@ -53,6 +53,36 @@ from pathlib import Path
 
 GROUP_RE = re.compile(r'(group[_-]?\d+)', re.IGNORECASE)
 
+# Two people closer than this are treated as being in the same conversation.
+# Matches group_distance_m in group_perception_node, so the ground truth is
+# grouped by exactly the same rule the robot uses at run time - otherwise the
+# metrics would be scoring against a different definition of "group" than the
+# one being measured.
+GROUP_DISTANCE_M = 1.5
+
+
+def cluster_by_distance(people: list[dict], threshold: float) -> list[int]:
+    """Connected-components clustering on 2D positions. Returns a label per person."""
+    n = len(people)
+    labels = [-1] * n
+    current = 0
+    for start in range(n):
+        if labels[start] != -1:
+            continue
+        stack = [start]
+        labels[start] = current
+        while stack:
+            i = stack.pop()
+            for j in range(n):
+                if labels[j] != -1:
+                    continue
+                if math.hypot(people[i]['x'] - people[j]['x'],
+                              people[i]['y'] - people[j]['y']) <= threshold:
+                    labels[j] = current
+                    stack.append(j)
+        current += 1
+    return labels
+
 
 def parse_pose(text: str | None) -> tuple[float, float, float] | None:
     """Return (x, y, yaw) from an SDF pose string, or None if unusable."""
@@ -111,20 +141,47 @@ def main() -> None:
         x, y, yaw = pos
 
         match = GROUP_RE.search(name)
-        if not match:
-            ungrouped.append(name)
-            continue
-
         people.append({
             'name': name,
-            'group_key': match.group(1).lower().replace('-', '_'),
+            'group_key': match.group(1).lower().replace('-', '_') if match else None,
             'x': round(x, 3), 'y': round(y, 3), 'yaw': round(yaw, 4),
         })
+        if not match:
+            ungrouped.append(name)
 
     if not people:
-        print("No grouped actors found. Check the actor naming convention "
-              "(expected something like group_01_person_01_...).")
+        print("No <actor> elements found in this world at all.")
         return
+
+    # ------------------------------------------------------------------
+    # FALL BACK TO SPATIAL CLUSTERING when the names carry no group number.
+    #
+    # Requiring a `group_NN_` prefix made this script refuse to see perfectly
+    # good worlds: actors named final_group_person_01_static, person_a,
+    # human_left and so on produced "No grouped actors found" and an EMPTY
+    # ground-truth file - which in turn made every social metric score zero
+    # while looking like it had worked.
+    #
+    # Who is in a conversation is a question about geometry, not naming. So if
+    # the names do not say, work it out from the positions with the same
+    # connected-components rule the live perception uses: people within
+    # GROUP_DISTANCE_M of each other belong to the same group.
+    # ------------------------------------------------------------------
+    if all(p['group_key'] is None for p in people):
+        print(f"  No group_NN_ naming found - grouping the {len(people)} "
+              f"actor(s) by position instead "
+              f"(within {GROUP_DISTANCE_M} m = same group).")
+        labels = cluster_by_distance(people, GROUP_DISTANCE_M)
+        for p, lab in zip(people, labels):
+            p['group_key'] = f'group_{lab + 1:02d}'
+        ungrouped = []
+    else:
+        # Mixed world: keep named groups, and give each unnamed actor its own.
+        loose = 0
+        for p in people:
+            if p['group_key'] is None:
+                loose += 1
+                p['group_key'] = f'ungrouped_{loose:02d}'
 
     by_group: dict[str, list[dict]] = defaultdict(list)
     for p in people:
