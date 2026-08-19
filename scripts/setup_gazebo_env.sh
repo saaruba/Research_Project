@@ -39,6 +39,7 @@ PROJECT_ROOT=/workspaces/Research_Project
 # so the parent of the model folder must be on the path, not models/ itself.
 export GAZEBO_MODEL_PATH="\
 ${PROJECT_ROOT}/models/restaurant_furniture:\
+${PROJECT_ROOT}/models/restaurant_decor:\
 ${PROJECT_ROOT}/models:\
 ${PROJECT_ROOT}/src/tiago_social_worlds/models:\
 ${HOME}/.gazebo/models:\
@@ -77,4 +78,9 @@ if [ -d "${PROJECT_ROOT}/models/restaurant_furniture/free-wooden-round-dining-ta
     echo "  OK   table model found locally - Gazebo will not go looking online"
 else
     echo "  WARN table model NOT found - Gazebo may still report a missing uri"
+fi
+if [ -d "${PROJECT_ROOT}/models/restaurant_decor/low-poly-plant-in-a-pot" ]; then
+    echo "  OK   plant model found locally - Gazebo will not go looking online"
+else
+    echo "  WARN plant model NOT found - Gazebo may still report a missing uri"
 fi
