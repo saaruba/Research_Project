@@ -137,14 +137,20 @@ sys.exit(0 if ok else 1)
 PY
 sleep 3
 
-NPEOPLE=$(python3 -c "
-import json; d=json.load(open('$GT'))
-print(sum(g['num_people'] for g in d['groups']))" 2>/dev/null || echo 2)
-MINSIZE=2
-[ "${NPEOPLE:-2}" -lt 2 ] && MINSIZE=1
+# min_group_size must match the SMALLEST group in the world, not the total
+# headcount. A world with two conversations and one person standing alone has
+# seven people but a smallest group of one - and with min_group_size=2 the lone
+# person is invisible to the pipeline and never approached.
+read -r NPEOPLE NGROUPS MINSIZE <<< "$(python3 -c "
+import json
+d = json.load(open('$GT'))
+g = d['groups']
+sizes = [x['num_people'] for x in g] or [2]
+print(sum(sizes), len(g), max(1, min(sizes)))" 2>/dev/null || echo "2 1 2")"
 
 echo ""
-echo "[3] World has ${NPEOPLE} person(s) -> min_group_size=${MINSIZE}"
+echo "[3] World has ${NPEOPLE} person(s) in ${NGROUPS} group(s)"
+echo "    smallest group = ${MINSIZE} -> min_group_size=${MINSIZE}"
 
 # --- Go ----------------------------------------------------------------------
 echo ""
@@ -190,7 +196,54 @@ fi
 
 echo "------------------------------------------------------------"
 
+# --- Which model does this policy use? ---------------------------------------
+MODELS="${PROJECT}/dataset/processed/models"
+case "$POLICY" in
+    mlp) MODEL_ARG="model_path:=${MODELS}/approach_pose_mlp_tuned.joblib" ;;
+    bc)  MODEL_ARG="model_path:=${MODELS}/approach_pose_random_forest_tuned.joblib" ;;
+    *)   MODEL_ARG="" ;;
+esac
+[ -n "$MODEL_ARG" ] && echo "    model: ${MODEL_ARG#model_path:=}"
+
+RESULTS="${PROJECT}/dataset/processed/sim_results"
+BEFORE=$(ls -1 "$RESULTS" 2>/dev/null | wc -l)
+
 ros2 launch tiago_group_approach group_approach.launch.py \
     policy:="$POLICY" \
     min_group_size:="$MINSIZE" \
-    groundtruth:="$GT"
+    groundtruth:="$GT" \
+    $MODEL_ARG &
+LAUNCH_PID=$!
+
+# --- Stop when the trial has actually finished -------------------------------
+# The mission ends itself and the recorder writes a results file, but ros2
+# launch keeps the nodes alive afterwards, so every trial needed a manual
+# Ctrl-C. Watching for a NEW file in sim_results/ is a reliable completion
+# signal and makes unattended batches possible - see scripts/run_trials.sh.
+# AUTO_EXIT=0 restores the old behaviour if you want to watch a run.
+if [ "${AUTO_EXIT:-1}" = "1" ]; then
+    LIMIT="${TRIAL_TIMEOUT:-1200}"
+    START=$(date +%s)
+    while kill -0 "$LAUNCH_PID" 2>/dev/null; do
+        sleep 5
+        NOW=$(ls -1 "$RESULTS" 2>/dev/null | wc -l)
+        if [ "$NOW" -gt "$BEFORE" ]; then
+            echo ""
+            echo "    Trial complete - results written. Shutting the trial down."
+            sleep 8            # let the recorder flush and the bag close
+            kill -INT "$LAUNCH_PID" 2>/dev/null
+            break
+        fi
+        if [ $(( $(date +%s) - START )) -gt "$LIMIT" ]; then
+            echo "" >&2
+            echo "    TIMEOUT after ${LIMIT}s with no results file - stopping." >&2
+            kill -INT "$LAUNCH_PID" 2>/dev/null
+            break
+        fi
+    done
+fi
+
+wait "$LAUNCH_PID" 2>/dev/null
+echo ""
+echo "Latest result:"
+ls -t "$RESULTS"/*.json 2>/dev/null | head -1

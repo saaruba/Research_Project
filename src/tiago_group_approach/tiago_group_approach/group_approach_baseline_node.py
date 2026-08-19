@@ -89,8 +89,21 @@ class GroupApproachBaselineNode(Node):
         # So the chosen pose is now also checked against EVERY detected person
         # individually, and pushed back along the approach line until it clears
         # them all.
-        self.declare_parameter('min_person_clearance', 1.0)
+        # 0.7 m to the NEAREST PERSON, not to the group centre.
+        #
+        # The distinction matters. This group's O-space radius is about 0.71 m,
+        # so a 0.7 m standoff measured from the centroid would put the robot in
+        # the middle of the conversation. Measured to the nearest person, 0.7 m
+        # sits inside Hall's personal zone (0.45-1.2 m) - close enough to
+        # address someone, which is what HRI approach studies typically find
+        # comfortable for a service robot, and not so close as to be intimate.
+        self.declare_parameter('min_person_clearance', 0.7)
         self.declare_parameter('max_standoff', 3.0)
+        # 'gap'  - stand in the widest opening of the formation (P-space)
+        # 'line' - the original: straight along the robot's line of sight.
+        #          This is the variant the OFFLINE evaluation used, so keep it
+        #          available for a like-for-like comparison in the write-up.
+        self.declare_parameter('approach_mode', 'gap')
 
         self._people: list[tuple[float, float]] = []
         self._goal_in_flight = False
@@ -119,6 +132,52 @@ class GroupApproachBaselineNode(Node):
             f'standoff_distance={self.get_parameter("standoff_distance").value} m. '
             'Waiting for a group centroid on /group_centroid...'
         )
+
+    def gap_approach_pose(self, gx: float, gy: float, rx: float, ry: float):
+        """
+        Stand in the widest opening of the formation, facing in.
+
+        Returns (x, y) or None if no opening clears the people.
+        """
+        clearance = self.get_parameter('min_person_clearance').value
+        max_r = self.get_parameter('max_standoff').value
+
+        bearings = sorted(math.atan2(p[1] - gy, p[0] - gx) for p in self._people)
+        n = len(bearings)
+
+        # Angular midpoints of every gap between neighbouring people, including
+        # the wrap-around gap between the last and the first.
+        gaps = []
+        for i in range(n):
+            a = bearings[i]
+            b = bearings[(i + 1) % n] + (2 * math.pi if i == n - 1 else 0.0)
+            width = b - a
+            gaps.append((width, a + width / 2.0))
+
+        robot_bearing = math.atan2(ry - gy, rx - gx)
+
+        def angdiff(a, b):
+            return abs(math.atan2(math.sin(a - b), math.cos(a - b)))
+
+        # Wide gaps first, but break ties towards the robot's own side.
+        gaps.sort(key=lambda g: (-g[0], angdiff(g[1], robot_bearing)))
+
+        for width, mid in gaps:
+            if width < math.radians(45):
+                continue                       # too tight to stand in
+            r = clearance
+            while r <= max_r:
+                cx = gx + math.cos(mid) * r
+                cy = gy + math.sin(mid) * r
+                if min(math.dist((cx, cy), p) for p in self._people) >= clearance:
+                    self.get_logger().info(
+                        f'Approaching through a {math.degrees(width):.0f} deg gap '
+                        f'at {r:.2f} m from the group centre '
+                        f'({math.degrees(angdiff(mid, robot_bearing)):.0f} deg '
+                        'off the robot\'s current side).')
+                    return cx, cy
+                r += 0.1
+        return None
 
     def people_callback(self, msg: PoseArray) -> None:
         """Latest individual person positions, in the map frame."""
@@ -180,6 +239,24 @@ class GroupApproachBaselineNode(Node):
                     f'Backed off an extra {extra:.1f} m: the {standoff:.1f} m '
                     f'pose was within {clearance:.1f} m of a person '
                     f'({len(self._people)} detected).')
+
+        # --- Prefer a GAP in the formation ------------------------------------
+        # Everything above approaches along the robot's line of sight, which
+        # can point straight at somebody's back. People standing in a circle
+        # leave openings, and those openings are where a newcomer is expected
+        # to arrive - Kendon's P-space, the ring just outside the O-space where
+        # participants stand.
+        #
+        # So: take each person's bearing from the group centre, find the widest
+        # angular gap between neighbours, and aim for the middle of it, at a
+        # radius that clears the nearest person by min_person_clearance. Among
+        # candidate gaps, prefer the one nearest the robot's current bearing,
+        # so it does not walk all the way around a group to use a marginally
+        # wider opening.
+        if self.get_parameter('approach_mode').value == 'gap' and len(self._people) >= 2:
+            gap = self.gap_approach_pose(group_x, group_y, robot_x, robot_y)
+            if gap is not None:
+                approach_x, approach_y = gap
 
         # Face back toward the group centre.
         facing_yaw = math.atan2(group_y - approach_y, group_x - approach_x)

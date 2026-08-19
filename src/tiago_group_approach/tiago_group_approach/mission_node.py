@@ -72,6 +72,8 @@ class MissionNode(Node):
         # Without it a robot parked in front of a group re-arms the pause
         # forever and the tour never continues.
         self.declare_parameter('max_approach_time', 90.0)
+        # How many "we saw them but never went" groups to mop up at the end.
+        self.declare_parameter('max_extra_visits', 3)
 
         flat = list(self.get_parameter('waypoints').value)
         self.waypoints = [(flat[i], flat[i + 1])
@@ -169,6 +171,23 @@ class MissionNode(Node):
         return any(math.hypot(pos[0] - v[0], pos[1] - v[1]) < 2.0
                    for v in self.visited)
 
+    def unvisited_sightings(self) -> list[tuple[float, float]]:
+        """Distinct places a group was seen, that were never approached.
+
+        Capped by max_extra_visits so a stream of spurious detections in a far
+        corner cannot extend the run indefinitely.
+        """
+        out = []
+        for x, y, count in self.cluster_sightings():
+            if count < 3:
+                continue                      # too fleeting to trust
+            if self.already_visited((x, y)):
+                continue
+            if any(math.hypot(x - ox, y - oy) < 2.0 for ox, oy in out):
+                continue
+            out.append((x, y))
+        return out[:int(self.get_parameter('max_extra_visits').value)]
+
     # -------------------------------------------------------------- main loop
     def tick(self) -> None:
         if self.finished or not self.nav.server_is_ready():
@@ -183,8 +202,30 @@ class MissionNode(Node):
 
     def send_waypoint(self) -> None:
         if self.index >= len(self.waypoints):
-            self.complete()
-            return
+            # ----------------------------------------------------------------
+            # Before finishing: is there anyone we SAW but never approached?
+            #
+            # A group spotted from across the room while the robot was driving
+            # elsewhere would otherwise be logged as "seen 40 times" and never
+            # visited - the run would end reporting sightings it never acted
+            # on. So the tour is extended with a sweep of the leftovers.
+            #
+            # Deliberately based on what was OBSERVED, not on the ground-truth
+            # file. Using ground truth would let the robot drive to people it
+            # never actually detected, which would flatter the perception
+            # results rather than test them.
+            # ----------------------------------------------------------------
+            missed = self.unvisited_sightings()
+            if missed:
+                x, y = missed[0]
+                self.get_logger().info(
+                    f'Tour done, but {len(missed)} seen group(s) were never '
+                    f'approached. Going back for the one at ({x:.2f}, {y:.2f}).')
+                self.waypoints.append((x, y))
+                # fall through and drive to it
+            else:
+                self.complete()
+                return
 
         x, y = self.waypoints[self.index]
         here = self.robot_xy()

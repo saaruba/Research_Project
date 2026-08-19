@@ -82,7 +82,18 @@ class MetricsRecorderNode(Node):
         self.declare_parameter('min_valid_range_m', 0.20)
         # Ignore collisions during spawn settling / initial localisation.
         self.declare_parameter('collision_grace_s', 5.0)
-        self.declare_parameter('success_standoff_min_m', 0.8)
+        # Distance to the GROUP CENTRE that counts as a successful approach.
+        #
+        # The lower bound is 0.5 m, not 0.8 m, because the approach policy now
+        # targets 0.7 m clearance to the nearest PERSON and stands in a gap in
+        # the formation. A robot correctly positioned in the P-space of a tight
+        # group sits well inside 0.8 m of the centre, and the old band would
+        # have scored those good approaches as failures.
+        #
+        # The bound that actually protects against crowding is
+        # min_distance_to_person_m, reported separately - a pose can only be
+        # this close to the centre if it still clears every individual.
+        self.declare_parameter('success_standoff_min_m', 0.5)
         self.declare_parameter('success_standoff_max_m', 2.0)
         self.declare_parameter('robot_radius_m', 0.27)   # PMB2 base ~0.27 m
 

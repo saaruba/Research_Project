@@ -62,7 +62,9 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'policy', default_value='rule',
             description="Which policy to run: 'rule' (geometric baseline) or "
-                        "'bc' (trained Behavioural Cloning model)"),
+                        "'bc' (trained Random Forest) or 'mlp' (trained MLP). "
+                        "'bc' and 'mlp' run the same node with a different "
+                        ".joblib - pass model_path to choose it."),
         DeclareLaunchArgument(
             'metrics', default_value='true',
             description='Record evaluation metrics for this run'),
@@ -161,7 +163,13 @@ def generate_launch_description():
             executable='bc_policy_node',
             name='bc_policy_node',
             output='screen',
-            condition=IfCondition(PythonExpression(["'", policy, "' == 'bc'"])),
+            # Both learned policies use this same node - only the .joblib
+            # differs. Running the MLP as well as the Random Forest matches the
+            # offline evaluation, which compared rule / RF / MLP / naive; live
+            # results for all three make the two analyses directly comparable
+            # instead of the live study testing a subset.
+            condition=IfCondition(PythonExpression(
+                ["'", policy, "' in ('bc', 'mlp')"])),
             parameters=[{'model_path': model_path}],
         ),
 
