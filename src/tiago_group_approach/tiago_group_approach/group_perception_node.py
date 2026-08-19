@@ -252,7 +252,17 @@ class GroupPerceptionNode(Node):
         depth_topic = self.get_parameter('depth_topic').value
         info_topic = self.get_parameter('camera_info_topic').value
 
-        self.create_subscription(CameraInfo, info_topic, self.camera_info_callback, 10)
+        # sensor_qos, NOT the default depth-10 profile.
+        #
+        # A plain `10` means RELIABLE. Gazebo publishes camera_info as SENSOR
+        # DATA, which is BEST_EFFORT, and ROS 2 QoS compatibility is one-way: a
+        # BEST_EFFORT subscriber happily receives from a RELIABLE publisher,
+        # but a RELIABLE subscriber receives NOTHING from a BEST_EFFORT one -
+        # silently. The topic lists, `count_publishers` returns 1, everything
+        # looks connected, and not a single message ever arrives. That is
+        # exactly what "Waiting for CameraInfo..." forever meant.
+        self.create_subscription(CameraInfo, info_topic,
+                                 self.camera_info_callback, sensor_qos)
 
         rgb_sub = message_filters.Subscriber(self, Image, rgb_topic, qos_profile=sensor_qos)
         depth_sub = message_filters.Subscriber(self, Image, depth_topic, qos_profile=sensor_qos)

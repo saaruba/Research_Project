@@ -344,6 +344,7 @@ echo "[2/5] Waiting for the camera (up to 3 minutes)..."
 python3 - <<'PY'
 import sys, time
 import rclpy
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import CameraInfo
 
 WANT = '/head_front_camera/rgb/camera_info'
@@ -351,7 +352,16 @@ WANT = '/head_front_camera/rgb/camera_info'
 rclpy.init()
 node = rclpy.create_node('camera_waiter')
 got = {'msg': False}
-node.create_subscription(CameraInfo, WANT, lambda _: got.__setitem__('msg', True), 10)
+
+# BEST_EFFORT. Gazebo publishes camera data as sensor data, and a RELIABLE
+# subscriber receives NOTHING from a BEST_EFFORT publisher - silently. The
+# earlier version used the default (reliable) profile, so it reported
+# "publishers: 1" for three minutes without ever getting a message.
+# BEST_EFFORT is the permissive side: it also accepts RELIABLE publishers.
+sensor_qos = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
+                        history=HistoryPolicy.KEEP_LAST, depth=1)
+node.create_subscription(CameraInfo, WANT,
+                         lambda _: got.__setitem__('msg', True), sensor_qos)
 
 deadline = time.time() + 180
 start = time.time()
