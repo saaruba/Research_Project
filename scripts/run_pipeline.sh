@@ -84,12 +84,58 @@ PY
 # --- Ground truth ------------------------------------------------------------
 if [ ! -f "$GT" ]; then
     echo "" >&2
-    echo "[2] No ground truth at $GT" >&2
+    echo "[3] No ground truth at $GT" >&2
     echo "    Generate it:" >&2
     echo "      python3 scripts/extract_world_groundtruth.py \\" >&2
     echo "          --world ${PROJECT}/src/tiago_social_worlds/worlds/${WORLD}.world" >&2
     exit 1
 fi
+
+# --- Reset the robot to the same start pose ---------------------------------
+# EVERY TRIAL MUST START IDENTICALLY.
+#
+# Terminal 1 stays up across trials, so without this the robot begins each run
+# wherever the last one left it. Measured directly: one trial's very first
+# trajectory sample was already (-2.46, -2.48) - standing among the people,
+# 0.7 m from someone, before the policy had done anything. Metrics from a run
+# like that say nothing about the policy.
+#
+# Teleporting the robot back to the origin makes rule and bc trials comparable,
+# which is the whole basis of the Objective 4 comparison.
+echo ""
+echo "[2] Resetting the robot to the start pose (0, 0)..."
+python3 - <<'PY' || echo "    WARNING: could not reset - trials may not be comparable"
+import sys
+import rclpy
+from gazebo_msgs.srv import SetEntityState
+
+rclpy.init()
+n = rclpy.create_node('trial_reset')
+cli = n.create_client(SetEntityState, '/gazebo/set_entity_state')
+
+if not cli.wait_for_service(timeout_sec=15.0):
+    print("    /gazebo/set_entity_state unavailable "
+          "(is gazebo_ros_state in the world file?)")
+    rclpy.shutdown(); sys.exit(1)
+
+req = SetEntityState.Request()
+req.state.name = 'tiago'
+req.state.pose.position.x = 0.0
+req.state.pose.position.y = 0.0
+req.state.pose.position.z = 0.0
+req.state.pose.orientation.w = 1.0
+req.state.reference_frame = 'world'
+
+fut = cli.call_async(req)
+rclpy.spin_until_future_complete(n, fut, timeout_sec=15.0)
+res = fut.result()
+ok = bool(res and res.success)
+print("    robot reset to (0, 0) facing +x" if ok
+      else f"    reset rejected: {getattr(res, 'status_message', 'no response')}")
+rclpy.shutdown()
+sys.exit(0 if ok else 1)
+PY
+sleep 3
 
 NPEOPLE=$(python3 -c "
 import json; d=json.load(open('$GT'))
@@ -98,11 +144,11 @@ MINSIZE=2
 [ "${NPEOPLE:-2}" -lt 2 ] && MINSIZE=1
 
 echo ""
-echo "[2] World has ${NPEOPLE} person(s) -> min_group_size=${MINSIZE}"
+echo "[3] World has ${NPEOPLE} person(s) -> min_group_size=${MINSIZE}"
 
 # --- Go ----------------------------------------------------------------------
 echo ""
-echo "[3] Launching perception -> policy -> Nav2 -> metrics"
+echo "[4] Launching perception -> policy -> Nav2 -> metrics"
 echo "    (output is live below - Ctrl-C stops the behaviour only,"
 echo "     the simulation in the other terminal keeps running)"
 echo ""
@@ -111,7 +157,40 @@ echo "      'Group centroid (...) -> approach pose (...)'"
 echo "      'Nav2 goal accepted - robot is moving.'"
 echo "------------------------------------------------------------"
 
-exec ros2 launch tiago_group_approach group_approach.launch.py \
+# --- Optional: record a rosbag of the trial ---------------------------------
+# BAG=0 to skip. Recording costs a little disk and nothing else, and it makes
+# each trial reproducible after the fact: you can replay exactly what the robot
+# saw and did without re-running the simulation.
+#
+# NOTE ON RE-TRAINING FROM THESE BAGS - see docs. They are EVIDENCE, not
+# training data. Behavioural Cloning learns to copy a demonstrator; a bag of
+# the robot copying itself contains no correction signal, so training on it
+# reinforces current behaviour, mistakes included. Improving from experience
+# needs either human corrections (DAgger) or a reward signal (RL).
+if [ "${BAG:-1}" = "1" ]; then
+    BAGDIR="${PROJECT}/dataset/processed/sim_bags/${POLICY}_$(date +%Y%m%d_%H%M%S)"
+    mkdir -p "$(dirname "$BAGDIR")"
+    echo ""
+    echo "[5] Recording a bag to ${BAGDIR}"
+    ros2 bag record -o "$BAGDIR" \
+        /scan_raw \
+        /mobile_base_controller/odom \
+        /mobile_base_controller/cmd_vel_unstamped \
+        /group_centroid \
+        /detected_people \
+        /tf /tf_static \
+        /head_front_camera/rgb/camera_info \
+        > /tmp/rosbag.log 2>&1 &
+    BAG_PID=$!
+    trap 'echo ""; echo "Stopping the bag recorder..."; kill -INT '"$BAG_PID"' 2>/dev/null; sleep 3' EXIT INT TERM
+else
+    echo ""
+    echo "[5] Bag recording disabled (BAG=0)"
+fi
+
+echo "------------------------------------------------------------"
+
+ros2 launch tiago_group_approach group_approach.launch.py \
     policy:="$POLICY" \
     min_group_size:="$MINSIZE" \
     groundtruth:="$GT"
