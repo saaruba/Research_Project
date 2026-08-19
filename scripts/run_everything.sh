@@ -102,7 +102,23 @@ cleanup() {
     kill_stale
     echo "Done."
 }
-trap cleanup EXIT INT TERM
+# Ctrl-C must actually STOP the script, not just tidy up.
+#
+# The trap used to be `trap cleanup EXIT INT TERM`. On Ctrl-C, bash killed the
+# foreground child (a python block or a ros2 call), ran cleanup - which printed
+# "Shutting everything down... Done." - and then CARRIED ON to the next stage,
+# because a trap handler returns to where execution left off. Every subsequent
+# Ctrl-C killed only the next child. That is why the log showed the script
+# marching through stages 3, 3d and 4 long after it claimed to have shut down.
+#
+# Separating the signal handler from the EXIT handler, and exiting explicitly,
+# makes one Ctrl-C mean one shutdown.
+on_signal() {
+    cleanup
+    exit 130
+}
+trap on_signal INT TERM
+trap cleanup EXIT
 
 echo "============================================================"
 echo "  world : $WORLD"
@@ -428,37 +444,88 @@ fi
 # 'unconfigured'. configure() is what LOADS the map, so with no yaml_filename
 # set (PAL does not set one for a custom world) it has nothing to load and the
 # transition fails. Setting the parameter first makes configure succeed.
+# ----------------------------------------------------------------------------
+# ONE Python process, not eighty `ros2` CLI calls.
+#
+# The previous version set the parameter with `ros2 param set`, then polled
+# `ros2 lifecycle get` up to 40 times per transition, twice. Every one of those
+# spawns a fresh Python interpreter, imports rclpy and joins the ROS graph. On
+# a fast container that is tolerable; on the lab PC each call took several
+# seconds, so the two loops ran for FIFTEEN MINUTES and still reported
+# "map_server: unknown".
+#
+# Doing the whole thing inside a single node - set the parameter, request
+# CONFIGURE, request ACTIVATE, read the state back - pays that cost once.
+# ----------------------------------------------------------------------------
 echo "      pointing map_server at: $MAP_YAML"
-ros2 param set /map_server yaml_filename "$MAP_YAML" >/dev/null 2>&1 \
-    && echo "      parameter set" \
-    || echo "      WARNING: could not set yaml_filename (is /map_server running?)"
-ros2 param set /map_server use_sim_time true >/dev/null 2>&1 || true
+echo "      activating map_server (single process, ~10-30 s)..."
+MAP_YAML="$MAP_YAML" python3 - <<'PY'
+import os, sys, time
+import rclpy
+from rclpy.node import Node
+from rclpy.parameter import Parameter
+from rcl_interfaces.srv import SetParameters
+from lifecycle_msgs.srv import ChangeState, GetState
+from lifecycle_msgs.msg import Transition
 
-echo "      activating map_server..."
-for target in configure activate; do
-    want=$([ "$target" = configure ] && echo inactive || echo active)
-    ros2 lifecycle set /map_server "$target" >/dev/null 2>&1 || true
-    for i in $(seq 1 40); do
-        [ "$(ros2 lifecycle get /map_server 2>/dev/null | awk '{print $1}')" = "$want" ] && break
-        sleep 1
-    done
-done
-MS_STATE=$(ros2 lifecycle get /map_server 2>/dev/null || echo unknown)
-echo "      map_server: $MS_STATE"
+YAML = os.environ['MAP_YAML']
+STATE_NAMES = {1: 'unconfigured', 2: 'inactive', 3: 'active', 4: 'finalized'}
 
-# Fallback: ask the lifecycle MANAGER to bring the localisation stack up. Doing
-# it through the manager keeps its bond bookkeeping consistent, so it will not
-# later decide the node died and shut it down again.
-case "$MS_STATE" in
-    active*) : ;;
-    *)
-        echo "      still not active - asking lifecycle_manager_localization to start it..."
-        timeout 45 ros2 service call /lifecycle_manager_localization/manage_nodes \
-            nav2_msgs/srv/ManageLifecycleNodes "{command: 0}" >/dev/null 2>&1 || true
-        sleep 5
-        echo "      map_server: $(ros2 lifecycle get /map_server 2>/dev/null || echo unknown)"
-        ;;
-esac
+rclpy.init()
+n = rclpy.create_node('map_bringup')
+
+def call(client, req, timeout=60.0):
+    if not client.wait_for_service(timeout_sec=timeout):
+        return None
+    fut = client.call_async(req)
+    rclpy.spin_until_future_complete(n, fut, timeout_sec=timeout)
+    return fut.result()
+
+set_p = n.create_client(SetParameters, '/map_server/set_parameters')
+get_s = n.create_client(GetState, '/map_server/get_state')
+chg_s = n.create_client(ChangeState, '/map_server/change_state')
+
+req = SetParameters.Request()
+req.parameters = [
+    Parameter('yaml_filename', Parameter.Type.STRING, YAML).to_parameter_msg(),
+    Parameter('use_sim_time', Parameter.Type.BOOL, True).to_parameter_msg(),
+]
+r = call(set_p, req)
+print('      parameter set' if r else '      WARNING: could not set yaml_filename',
+      flush=True)
+
+def state():
+    r = call(get_s, GetState.Request(), timeout=20.0)
+    return r.current_state.id if r else 0
+
+def transition(tid, want, label):
+    r = call(chg_s, ChangeState.Request(transition=Transition(id=tid)), timeout=90.0)
+    deadline = time.time() + 60
+    while time.time() < deadline:
+        if state() == want:
+            print(f'      {label} OK', flush=True)
+            return True
+        time.sleep(1.0)
+    return False
+
+s = state()
+print(f'      current state: {STATE_NAMES.get(s, s)}', flush=True)
+if s == 1:
+    transition(Transition.TRANSITION_CONFIGURE, 2, 'configured')
+if state() == 2:
+    transition(Transition.TRANSITION_ACTIVATE, 3, 'activated')
+
+final = state()
+print(f'      map_server: {STATE_NAMES.get(final, final)}', flush=True)
+rclpy.shutdown()
+sys.exit(0 if final == 3 else 1)
+PY
+if [ $? -ne 0 ]; then
+    echo "      map_server did not reach 'active'." >&2
+    echo "      Trying the lifecycle manager instead..." >&2
+    timeout 60 ros2 service call /lifecycle_manager_localization/manage_nodes \
+        nav2_msgs/srv/ManageLifecycleNodes "{command: 0}" >/dev/null 2>&1 || true
+fi
 
 # Prove it: /map must actually publish, or the global costmap has no static layer.
 # /map is published TRANSIENT_LOCAL (latched): map_server sends it once and
