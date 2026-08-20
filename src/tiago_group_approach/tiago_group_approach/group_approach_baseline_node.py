@@ -161,6 +161,21 @@ class GroupApproachBaselineNode(Node):
         # reach is not going to become reachable by trying an eighth time.
         self.declare_parameter('max_attempts_per_group', 3)
         self.declare_parameter('group_memory_radius', 1.5)
+
+        # --- Dwell -------------------------------------------------------------
+        # Arriving and immediately leaving is not an approach; it is passing by.
+        # The previous behaviour published "complete" the instant Nav2 reported
+        # arrival, the mission resumed, and the robot rolled straight on to the
+        # next waypoint - exactly what it looked like from the outside.
+        #
+        # Holding position facing the group for a few seconds is what makes it
+        # an approach: it is the moment a person would use to say hello, and it
+        # gives the metrics recorder a stable pose to score rather than a
+        # fly-past.
+        self.declare_parameter('dwell_time_s', 8.0)
+        self._dwell_until = 0.0
+        self._dwell_group = None
+        self.create_timer(1.0, self.dwell_tick)
         self._attempts: dict = {}          # (rx, ry) -> count
         self._finished_groups: list = []   # done or abandoned
         # 'gap'  - stand in the widest opening of the formation (P-space)
@@ -436,6 +451,11 @@ class GroupApproachBaselineNode(Node):
             return
         approach_x, approach_y, facing_yaw = result
 
+        # --- Standing with a group right now? stay put --------------------------
+        # No new goals while dwelling, or the robot would drive off mid-greeting.
+        if self._dwell_group is not None:
+            return
+
         # --- Already dealt with? -----------------------------------------------
         if self.group_finished(msg.point.x, msg.point.y):
             return
@@ -565,12 +585,27 @@ class GroupApproachBaselineNode(Node):
             return
 
         gx, gy = self._current_target
+        dwell = self.get_parameter('dwell_time_s').value
         self.get_logger().info(
-            f'APPROACH COMPLETE: standing {math.dist(pose, (gx, gy)):.2f} m '
-            f'from the group centre, {error:.2f} m from the intended pose. '
-            'Leaving the group and resuming the tour.')
-        self.retire_group(gx, gy, 'approached successfully')
+            f'ARRIVED: standing {math.dist(pose, (gx, gy)):.2f} m from the '
+            f'group centre, {error:.2f} m from the intended pose. '
+            f'Holding position for {dwell:.0f}s.')
+        self._dwell_until = self.get_clock().now().nanoseconds / 1e9 + dwell
+        self._dwell_group = (gx, gy)
         self._current_target = None
+
+    def dwell_tick(self) -> None:
+        """End the dwell, then release the group and the mission."""
+        if self._dwell_group is None:
+            return
+        if self.get_clock().now().nanoseconds / 1e9 < self._dwell_until:
+            return
+        gx, gy = self._dwell_group
+        self._dwell_group = None
+        self.get_logger().info(
+            f'APPROACH COMPLETE at ({gx:.2f}, {gy:.2f}) - leaving the group '
+            'and resuming the tour.')
+        self.retire_group(gx, gy, 'approached successfully')
 
 
 def main(args=None):
