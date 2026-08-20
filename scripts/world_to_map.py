@@ -73,6 +73,18 @@ def collect_obstacles(world_path: Path, laser_height: float) -> list[dict]:
 
     for model in root.findall(".//model"):
         name = model.get("name", "?")
+
+        # People are NOT part of the static map.
+        #
+        # add_person_collisions.py gives each person a collision cylinder so
+        # the LiDAR can see them - but baking those into the map would make
+        # Nav2 route around every group from the start, and O-space intrusion
+        # would then read zero for reasons unrelated to the policy. The metric
+        # has to stay measurable: the map keeps the space between people free,
+        # the robot is physically able to intrude, and whether it does is a
+        # real result. The live laser still stops it hitting anyone.
+        if name.startswith('person_collision_'):
+            continue
         mx, my, mz, myaw = parse_pose(model.findtext("./pose"))
 
         for link in model.findall("./link"):
