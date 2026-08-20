@@ -33,6 +33,47 @@
     },
     {
       "group_id": 1,
+      "source_name": "group3",
+      "centre_x": 5.6,
+      "centre_y": -1.8,
+      "radius": 0.875,
+      "ospace_radius": 0.875,
+      "num_people": 5,
+      "members": [
+        {
+          "name": "final_group3_person_01_static",
+          "x": 6.0,
+          "y": -1.0,
+          "yaw": -0.7854
+        },
+        {
+          "name": "final_group3_person_02_static",
+          "x": 6.5,
+          "y": -2.5,
+          "yaw": -2.2
+        },
+        {
+          "name": "final_group3_person_03_talking",
+          "x": 5.0,
+          "y": -2.0,
+          "yaw": 2.0
+        },
+        {
+          "name": "final_group3_person_04_talking",
+          "x": 5.0,
+          "y": -1.0,
+          "yaw": 0.179
+        },
+        {
+          "name": "final_group3_person_05_talking",
+          "x": 5.5,
+          "y": -2.5,
+          "yaw": 3.1416
+        }
+      ]
+    },
+    {
+      "group_id": 2,
       "source_name": "ungrouped_01",
       "centre_x": -3.0,
       "centre_y": -2.0,
@@ -49,7 +90,7 @@
       ]
     },
     {
-      "group_id": 2,
+      "group_id": 3,
       "source_name": "ungrouped_02",
       "centre_x": -3.0,
       "centre_y": -3.0,
@@ -66,7 +107,7 @@
       ]
     },
     {
-      "group_id": 3,
+      "group_id": 4,
       "source_name": "ungrouped_03",
       "centre_x": -4.0,
       "centre_y": -3.0,
@@ -83,7 +124,7 @@
       ]
     },
     {
-      "group_id": 4,
+      "group_id": 5,
       "source_name": "ungrouped_04",
       "centre_x": -4.0,
       "centre_y": -2.0,
@@ -96,6 +137,57 @@
           "x": -4.0,
           "y": -2.0,
           "yaw": 0.179
+        }
+      ]
+    },
+    {
+      "group_id": 6,
+      "source_name": "ungrouped_05",
+      "centre_x": -6.0,
+      "centre_y": -5.0,
+      "radius": 0.0,
+      "ospace_radius": 0.4,
+      "num_people": 1,
+      "members": [
+        {
+          "name": "Solo_talking",
+          "x": -6.0,
+          "y": -5.0,
+          "yaw": 0.0
+        }
+      ]
+    },
+    {
+      "group_id": 7,
+      "source_name": "ungrouped_06",
+      "centre_x": -6.0,
+      "centre_y": -7.0,
+      "radius": 0.0,
+      "ospace_radius": 0.4,
+      "num_people": 1,
+      "members": [
+        {
+          "name": "Solo_talking_2",
+          "x": -6.0,
+          "y": -7.0,
+          "yaw": 3.1416
+        }
+      ]
+    },
+    {
+      "group_id": 8,
+      "source_name": "ungrouped_07",
+      "centre_x": 4.0,
+      "centre_y": 2.0,
+      "radius": 0.0,
+      "ospace_radius": 0.4,
+      "num_people": 1,
+      "members": [
+        {
+          "name": "walking_person_01",
+          "x": 4.0,
+          "y": 2.0,
+          "yaw": -0.7854
         }
       ]
     }

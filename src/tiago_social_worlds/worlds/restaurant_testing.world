@@ -629,7 +629,6 @@
 
     </include>
 
-
     <!-- ===================================================== -->
     <!-- HUMAN GROUP 1                                        -->
     <!-- ===================================================== -->
@@ -700,7 +699,6 @@
         </trajectory>
       </script>
     </actor>
-
 
     <!-- PERSON 3 - TALKING -->
     <actor name="final_group_person_04_talking">
@@ -876,6 +874,308 @@
         </trajectory>
       </script>
     </actor>
+
+    <!-- ===================================================== -->
+    <!-- HUMAN GROUP 3                                        -->
+    <!-- ===================================================== -->
+
+    <!-- PERSON 1 - STATIC -->
+    <actor name="final_group3_person_01_static">
+      <pose>0 0 0 0 0 0</pose>
+      <skin>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="talk">
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>false</interpolate_x>
+      </animation>
+
+      <script>
+        <loop>true</loop>
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+
+        <trajectory id="515" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-2 -2). -->
+          <waypoint>
+            <time>0</time>
+            <pose>+6 -1 0 0 0 -0.7854</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>+6 -1 0 0 0 -0.7854</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+
+    <!-- PERSON 2 - STATIC -->
+    <actor name="final_group3_person_02_static">
+      <pose>0 0 0 0 0 0</pose>
+      <skin>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="talk">
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>false</interpolate_x>
+      </animation>
+
+      <script>
+        <loop>true</loop>
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+
+        <trajectory id="513" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-3,-3). -->
+          <waypoint>
+            <time>0</time>
+            <pose>6.5 -2.5 0 0 0 -2.2000</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>6.5 -2.5 0 0 0 -2.2000</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+    <!-- PERSON 3 - TALKING -->
+    <actor name="final_group3_person_03_talking">
+      <pose>0 0 0 0 0 0</pose>
+
+      <skin>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_2/talk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="talk">
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_2/talk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>false</interpolate_x>
+      </animation>
+
+      <script>
+        <loop>true</loop>
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+
+        <trajectory id="512" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-4,-3). -->
+          <waypoint>
+            <time>0</time>
+            <pose>+5 -2 0 0 0 2.0000</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>+5 -2 0 0 0 2.0000</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+
+    <!-- PERSON 4 - TALKING -->
+    <actor name="final_group3_person_04_talking">
+      <pose>0 0 0 0 0 0</pose>
+
+      <skin>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="talk">
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_suit/talk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>false</interpolate_x>
+      </animation>
+
+      <script>
+        <loop>true</loop>
+        <delay_start>0.7</delay_start>
+        <auto_start>true</auto_start>
+
+        <trajectory id="511" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-5,-1). -->
+          <waypoint>
+            <time>0</time>
+            <pose>+5 -1 0 0 0 0.17900</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>+5 -1 0 0 0 0.17900</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+ 
+     <!-- PERSON 5 - TALKING -->
+    <actor name="final_group3_person_05_talking">
+      <pose>0 0 0 0 0 0</pose>
+
+      <skin>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_black_dress/talk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="talk">
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_black_dress/talk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>false</interpolate_x>
+      </animation>
+
+      <script>
+        <loop>true</loop>
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+
+        <trajectory id="510" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-4,-3). -->
+          <waypoint>
+            <time>0</time>
+            <pose>5.5 -2.5 0 0 0 3.1416</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>5.5 -2.5 0 0 0 3.1416</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+
+    <!-- ===================================================== -->
+    <!-- SSOLO HUMAN                                         -->
+    <!-- ===================================================== -->
+    <actor name="Solo_talking">
+      <pose>0 0 0 0 0 0</pose>
+
+      <skin>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_black_dress/talk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="talk">
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_black_dress/talk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>false</interpolate_x>
+      </animation>
+
+      <script>
+        <loop>true</loop>
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+
+        <trajectory id="508" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-4,-3). -->
+          <waypoint>
+            <time>0</time>
+            <pose>-6 -5 0 0 0 0</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>-6 -5 0 0 0 0</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+
+    <actor name="Solo_talking_2">
+      <pose>0 0 0 0 0 0</pose>
+
+      <skin>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_2/talk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="talk">
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Male/m_casual_2/talk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>false</interpolate_x>
+      </animation>
+
+      <script>
+        <loop>true</loop>
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+
+        <trajectory id="509" type="talk">
+          <!-- Local zero-offset waypoints keep the actor at (-4,-3). -->
+          <waypoint>
+            <time>0</time>
+            <pose>-6 -7 0 0 0 3.1416</pose>
+          </waypoint>
+          <waypoint>
+            <time>30</time>
+            <pose>-6 -7 0 0 0 3.1416</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+    <!-- ===================================================== -->
+    <!-- WALKING HUMAN                                        -->
+    <!-- Female / w_black_dress                               -->
+    <!-- Route: (-5,-1) -> (-3,-1) -> (-3,+1) -> (-5,+1)    -->
+    <!--        -> (-5,-1), repeated continuously             -->
+    <!-- ===================================================== -->
+
+    <actor name="walking_person_01">
+      <pose>0 0 0 0 0 0</pose>
+
+      <skin>
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_black_dress/walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="walk">
+        <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_black_dress/walk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>false</interpolate_x>
+      </animation>
+
+      <script>
+        <loop>true</loop>
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+
+        <trajectory id="601" type="walk">
+          <tension>0</tension>
+
+          <waypoint>
+            <time>0</time>
+            <pose>4 2 0 0 0 -0.7854</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>26.3</time>
+            <pose>-2 -5 0 0 0 0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>51.3</time>
+            <pose>-2 -5 0 0 0 0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>51.3</time>
+            <pose>2 -5 0 0 0 3.1416</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>77.5</time>
+            <pose>-2 4 0 0 0 3.1416</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
 
     <!-- ===================================================== -->
     <!-- BUFFET / SERVICE COUNTER                              -->
