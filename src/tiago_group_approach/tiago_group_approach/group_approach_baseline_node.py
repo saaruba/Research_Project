@@ -98,7 +98,45 @@ class GroupApproachBaselineNode(Node):
         # address someone, which is what HRI approach studies typically find
         # comfortable for a service robot, and not so close as to be intimate.
         self.declare_parameter('min_person_clearance', 0.7)
+        # BODY RADII. min_person_clearance is the free space we want between
+        # the robot's SHELL and a person's body - not between their centres.
+        #
+        # Treating it as centre-to-centre was a real failure: TIAGo's footprint
+        # radius is ~0.30 m and a standing person ~0.25 m, so a 0.7 m
+        # centre-to-centre goal leaves 0.15 m of actual gap. The robot wedged
+        # itself into a group, came within 0.062 m of somebody, and then spent
+        # 84% of a ten-minute run stationary because Nav2 could not find a way
+        # out. Adding the radii means 0.7 m requested is 0.7 m delivered.
+        self.declare_parameter('robot_radius', 0.30)
+        self.declare_parameter('person_radius', 0.25)
         self.declare_parameter('max_standoff', 3.0)
+
+        # --- Stuck recovery ---------------------------------------------------
+        self.declare_parameter('stuck_timeout_s', 25.0)
+        self.declare_parameter('stuck_move_threshold_m', 0.10)
+        self._last_pose_xy = None
+        self._last_moved_time = 0.0
+
+        # --- Do not approach people who are walking ---------------------------
+        # A person crossing the room is not holding a conversation; there is no
+        # F-formation to join and no O-space to respect. Chasing them is both
+        # socially wrong and unachievable - the target moves as fast as the
+        # robot. They still matter as obstacles, which is Nav2's job, not the
+        # approach policy's.
+        #
+        # Movement is judged from the group centroid over a short window: any
+        # centroid drifting faster than this is treated as a passer-by.
+        self.declare_parameter('moving_speed_threshold', 0.15)   # m/s
+        self.declare_parameter('motion_window_s', 3.0)
+        self._centroid_history: list[tuple[float, float, float]] = []  # t, x, y
+
+        # --- Telling the mission we are done ----------------------------------
+        # The mission used to wait out a fixed timer before resuming its tour.
+        # Publishing the moment the approach actually succeeds lets it carry on
+        # immediately, which is what "approach, then leave and continue" means.
+        self.approach_done_pub = self.create_publisher(
+            PointStamped, '/approach/complete', 10)
+        self._current_target = None
         # 'gap'  - stand in the widest opening of the formation (P-space)
         # 'line' - the original: straight along the robot's line of sight.
         #          This is the variant the OFFLINE evaluation used, so keep it
@@ -133,13 +171,64 @@ class GroupApproachBaselineNode(Node):
             'Waiting for a group centroid on /group_centroid...'
         )
 
+    def group_is_moving(self, x: float, y: float) -> bool:
+        """Is this group drifting across the room rather than standing still?"""
+        now = self.get_clock().now().nanoseconds / 1e9
+        window = self.get_parameter('motion_window_s').value
+
+        self._centroid_history.append((now, x, y))
+        self._centroid_history = [h for h in self._centroid_history
+                                  if now - h[0] <= window]
+        if len(self._centroid_history) < 3:
+            return False
+
+        t0, x0, y0 = self._centroid_history[0]
+        dt = now - t0
+        if dt < 1.0:
+            return False
+        speed = math.dist((x, y), (x0, y0)) / dt
+        return speed > self.get_parameter('moving_speed_threshold').value
+
+    def effective_clearance(self) -> float:
+        """Centre-to-centre distance that yields the requested free gap."""
+        return (self.get_parameter('min_person_clearance').value
+                + self.get_parameter('robot_radius').value
+                + self.get_parameter('person_radius').value)
+
+    def check_stuck(self) -> bool:
+        """True if the robot has a goal but has not moved for a while.
+
+        Without this the robot could sit pressed against people indefinitely -
+        one run was 84% stationary. Nav2's own recovery behaviours assume space
+        to rotate and reverse into, which a robot surrounded by a crowd does
+        not have, so the approach has to give up on its own.
+        """
+        pose = self.get_robot_position()
+        if pose is None:
+            return False
+        now = self.get_clock().now().nanoseconds / 1e9
+        thresh = self.get_parameter('stuck_move_threshold_m').value
+
+        if self._last_pose_xy is None:
+            self._last_pose_xy = pose
+            self._last_moved_time = now
+            return False
+
+        if math.dist(pose, self._last_pose_xy) > thresh:
+            self._last_pose_xy = pose
+            self._last_moved_time = now
+            return False
+
+        return (now - self._last_moved_time
+                > self.get_parameter('stuck_timeout_s').value)
+
     def gap_approach_pose(self, gx: float, gy: float, rx: float, ry: float):
         """
         Stand in the widest opening of the formation, facing in.
 
         Returns (x, y) or None if no opening clears the people.
         """
-        clearance = self.get_parameter('min_person_clearance').value
+        clearance = self.effective_clearance()
         max_r = self.get_parameter('max_standoff').value
 
         bearings = sorted(math.atan2(p[1] - gy, p[0] - gx) for p in self._people)
@@ -221,7 +310,7 @@ class GroupApproachBaselineNode(Node):
         # the rule's character - approach along the line of sight, stop short,
         # face the group - while making it respect the people who define the
         # O-space rather than only their average position.
-        clearance = self.get_parameter('min_person_clearance').value
+        clearance = self.effective_clearance()
         max_standoff = self.get_parameter('max_standoff').value
         if self._people:
             extra = 0.0
@@ -281,6 +370,34 @@ class GroupApproachBaselineNode(Node):
             return
         approach_x, approach_y, facing_yaw = result
 
+        # --- Walking past? do not chase ---------------------------------------
+        if self.group_is_moving(msg.point.x, msg.point.y):
+            self.get_logger().info(
+                f'Group at ({msg.point.x:.2f}, {msg.point.y:.2f}) is moving - '
+                'not a standing conversation, so not approaching. Nav2 will '
+                'still avoid them.', throttle_duration_sec=10.0)
+            return
+
+        # --- Wedged in? back out before doing anything else -------------------
+        if self._goal_in_flight and self.check_stuck():
+            self.get_logger().warn(
+                'Not moving with a goal active - assuming the robot is wedged. '
+                'Retreating away from the group.')
+            rx, ry = robot_x, robot_y
+            dx, dy = rx - msg.point.x, ry - msg.point.y
+            d = math.hypot(dx, dy)
+            if d > 1e-6:
+                # 1.5 m directly away from the group centre, still facing it.
+                back_x = rx + (dx / d) * 1.5
+                back_y = ry + (dy / d) * 1.5
+                self._goal_in_flight = False
+                self._last_pose_xy = None
+                self.send_nav_goal(back_x, back_y,
+                                   math.atan2(msg.point.y - back_y,
+                                              msg.point.x - back_x),
+                                   frame_id=msg.header.frame_id or 'map')
+            return
+
         # --- Should this become a new Nav2 goal? -----------------------------
         now = self.get_clock().now().nanoseconds / 1e9
         threshold = self.get_parameter('goal_update_threshold_m').value
@@ -301,6 +418,7 @@ class GroupApproachBaselineNode(Node):
 
         self._last_goal_xy = (approach_x, approach_y)
         self._last_goal_time = now
+        self._current_target = (msg.point.x, msg.point.y)
 
         self.get_logger().info(
             f'Group centroid ({msg.point.x:.2f}, {msg.point.y:.2f}) -> '
@@ -340,12 +458,36 @@ class GroupApproachBaselineNode(Node):
         result_future.add_done_callback(self.result_callback)
 
     def result_callback(self, future):
-        result = future.result().result
-        self.get_logger().info(f'Nav2 goal finished. Result: {result}')
-        # Clearing this re-arms the node: the next centroid starts a fresh
-        # approach. The node therefore keeps approaching for as long as the
-        # simulation runs, rather than stopping after one successful approach.
+        self.get_logger().info('Nav2 goal finished.')
         self._goal_in_flight = False
+
+        # Did we actually END UP at the approach pose? Nav2 reports "finished"
+        # for aborted and cancelled goals too, so position is checked directly
+        # rather than trusted from the status code.
+        pose = self.get_robot_position()
+        if pose is None or self._last_goal_xy is None or self._current_target is None:
+            return
+
+        error = math.dist(pose, self._last_goal_xy)
+        if error > 0.75:
+            self.get_logger().info(
+                f'Ended {error:.2f} m from the intended approach pose - '
+                'not counting this as a completed approach.')
+            return
+
+        gx, gy = self._current_target
+        self.get_logger().info(
+            f'APPROACH COMPLETE: standing {math.dist(pose, (gx, gy)):.2f} m '
+            f'from the group centre, {error:.2f} m from the intended pose. '
+            'Leaving the group and resuming the tour.')
+
+        done = PointStamped()
+        done.header.frame_id = self.get_parameter('map_frame').value
+        done.header.stamp = self.get_clock().now().to_msg()
+        done.point.x, done.point.y = float(gx), float(gy)
+        self.approach_done_pub.publish(done)
+
+        self._current_target = None
 
 
 def main(args=None):

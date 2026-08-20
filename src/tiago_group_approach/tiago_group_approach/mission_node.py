@@ -103,6 +103,12 @@ class MissionNode(Node):
                                  self.on_group, 10)
         self.create_subscription(PoseArray, '/detected_people',
                                  self.on_people, 10)
+        # The policy tells us the moment it has actually reached a good
+        # approach pose. Event-driven, so the tour resumes immediately instead
+        # of waiting out max_approach_time - which is now only a safety net for
+        # approaches that never converge.
+        self.create_subscription(PointStamped, '/approach/complete',
+                                 self.on_approach_done, 10)
 
         self.create_timer(2.0, self.tick)
         self.get_logger().info(
@@ -166,6 +172,19 @@ class MissionNode(Node):
             return
 
         self.approach_paused_until = now + 5.0
+
+    def on_approach_done(self, msg: PointStamped) -> None:
+        pos = (msg.point.x, msg.point.y)
+        if self.already_visited(pos):
+            return
+        self.visited.append(pos)
+        self.approach_started = None
+        self.approach_target = None
+        self.approach_paused_until = 0.0     # resume the tour NOW
+        self.get_logger().info(
+            f'Approach at ({pos[0]:.2f}, {pos[1]:.2f}) confirmed complete - '
+            f'{len(self.visited)} group(s) done. Continuing the tour from '
+            f'waypoint {min(self.index + 1, len(self.waypoints))}.')
 
     def already_visited(self, pos) -> bool:
         return any(math.hypot(pos[0] - v[0], pos[1] - v[1]) < 2.0
