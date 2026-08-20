@@ -148,6 +148,21 @@ class GroupApproachBaselineNode(Node):
         self.approach_start_pub = self.create_publisher(
             PointStamped, '/approach/start', 10)
         self._current_target = None
+
+        # --- Memory of what we have already tried -----------------------------
+        # Without this the policy retries the same group indefinitely. Observed:
+        # a 30-minute run, 208 m driven, 65% of it stationary, endlessly
+        # re-approaching one group because no attempt ever satisfied the
+        # completion check, so nothing was ever recorded as done.
+        #
+        # Each group location is remembered along with how many times it has
+        # been attempted. After max_attempts it is abandoned for the rest of
+        # the run and the mission is told to move on - a group the robot cannot
+        # reach is not going to become reachable by trying an eighth time.
+        self.declare_parameter('max_attempts_per_group', 3)
+        self.declare_parameter('group_memory_radius', 1.5)
+        self._attempts: dict = {}          # (rx, ry) -> count
+        self._finished_groups: list = []   # done or abandoned
         # 'gap'  - stand in the widest opening of the formation (P-space)
         # 'line' - the original: straight along the robot's line of sight.
         #          This is the variant the OFFLINE evaluation used, so keep it
@@ -181,6 +196,30 @@ class GroupApproachBaselineNode(Node):
             f'standoff_distance={self.get_parameter("standoff_distance").value} m. '
             'Waiting for a group centroid on /group_centroid...'
         )
+
+    def group_key(self, x: float, y: float):
+        """Snap a group position to a memory cell, so small perception jitter
+        does not look like a brand-new group every frame."""
+        r = self.get_parameter('group_memory_radius').value
+        return (round(x / r), round(y / r))
+
+    def group_finished(self, x: float, y: float) -> bool:
+        r = self.get_parameter('group_memory_radius').value
+        return any(math.dist((x, y), g) < r for g in self._finished_groups)
+
+    def retire_group(self, x: float, y: float, reason: str) -> None:
+        """Stop considering this group, and tell the mission to carry on."""
+        if self.group_finished(x, y):
+            return
+        self._finished_groups.append((x, y))
+        self.get_logger().info(
+            f'Group at ({x:.2f}, {y:.2f}) retired ({reason}). '
+            f'{len(self._finished_groups)} group(s) done this run.')
+        done = PointStamped()
+        done.header.frame_id = self.get_parameter('map_frame').value
+        done.header.stamp = self.get_clock().now().to_msg()
+        done.point.x, done.point.y = float(x), float(y)
+        self.approach_done_pub.publish(done)
 
     def group_is_moving(self, x: float, y: float) -> bool:
         """Is this group drifting across the room rather than standing still?"""
@@ -397,6 +436,10 @@ class GroupApproachBaselineNode(Node):
             return
         approach_x, approach_y, facing_yaw = result
 
+        # --- Already dealt with? -----------------------------------------------
+        if self.group_finished(msg.point.x, msg.point.y):
+            return
+
         # --- Walking past? do not chase ---------------------------------------
         if self.group_is_moving(msg.point.x, msg.point.y):
             self.get_logger().info(
@@ -443,9 +486,20 @@ class GroupApproachBaselineNode(Node):
             self.get_logger().info(
                 f'Target moved {moved:.2f} m (> {threshold:.2f} m) - re-planning.')
 
+        # Count this attempt, and give up on the group after too many.
+        key = self.group_key(msg.point.x, msg.point.y)
+        self._attempts[key] = self._attempts.get(key, 0) + 1
+        attempts = self._attempts[key]
+        max_attempts = self.get_parameter('max_attempts_per_group').value
+        if attempts > max_attempts:
+            self.retire_group(msg.point.x, msg.point.y,
+                              f'unreachable after {max_attempts} attempts')
+            return
+
         self._last_goal_xy = (approach_x, approach_y)
         self._last_goal_time = now
         self._current_target = (msg.point.x, msg.point.y)
+        self.get_logger().info(f'Approach attempt {attempts}/{max_attempts}.')
 
         # Tell the mission to stand down BEFORE sending the goal, so it stops
         # issuing waypoints that would preempt this approach.
@@ -515,13 +569,7 @@ class GroupApproachBaselineNode(Node):
             f'APPROACH COMPLETE: standing {math.dist(pose, (gx, gy)):.2f} m '
             f'from the group centre, {error:.2f} m from the intended pose. '
             'Leaving the group and resuming the tour.')
-
-        done = PointStamped()
-        done.header.frame_id = self.get_parameter('map_frame').value
-        done.header.stamp = self.get_clock().now().to_msg()
-        done.point.x, done.point.y = float(gx), float(gy)
-        self.approach_done_pub.publish(done)
-
+        self.retire_group(gx, gy, 'approached successfully')
         self._current_target = None
 
 
