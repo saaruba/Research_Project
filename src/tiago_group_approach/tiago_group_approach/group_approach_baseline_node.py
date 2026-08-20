@@ -53,7 +53,7 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
 
-from geometry_msgs.msg import PointStamped, PoseArray, PoseStamped
+from geometry_msgs.msg import PointStamped, PoseArray, PoseStamped, Twist
 from nav2_msgs.action import NavigateToPose
 
 import tf2_ros
@@ -176,6 +176,28 @@ class GroupApproachBaselineNode(Node):
         self._dwell_until = 0.0
         self._dwell_group = None
         self.create_timer(1.0, self.dwell_tick)
+
+        # --- Unwedge reflex ----------------------------------------------------
+        # A last-resort recovery that does NOT go through Nav2.
+        #
+        # The robot ended one run motionless for 81+ seconds at (5.72, -3.46),
+        # 5 cm from a person, jammed between a group and a table. Nav2's own
+        # recovery behaviours assume room to rotate and reverse into; a robot
+        # wedged in a crowd has neither, and its recovery loop just spins.
+        # Earlier stuck-handling was worse than useless because it only ran
+        # while an approach goal was active - once the group had been retired,
+        # nothing checked at all.
+        #
+        # So: a periodic check, independent of any goal, that reverses the base
+        # directly on the velocity topic. Crude, and deliberately so - the point
+        # is to get free when the navigation stack cannot.
+        self.declare_parameter('unwedge_after_s', 30.0)
+        self.declare_parameter('unwedge_speed', -0.15)
+        self.declare_parameter('unwedge_duration_s', 3.0)
+        self._unwedge_until = 0.0
+        self.cmd_pub = self.create_publisher(
+            Twist, '/mobile_base_controller/cmd_vel_unstamped', 10)
+        self.create_timer(2.0, self.unwedge_tick)
         self._attempts: dict = {}          # (rx, ry) -> count
         self._finished_groups: list = []   # done or abandoned
         # 'gap'  - stand in the widest opening of the formation (P-space)
@@ -593,6 +615,48 @@ class GroupApproachBaselineNode(Node):
         self._dwell_until = self.get_clock().now().nanoseconds / 1e9 + dwell
         self._dwell_group = (gx, gy)
         self._current_target = None
+
+    def unwedge_tick(self) -> None:
+        """Reverse the base directly if the robot has stopped moving at all."""
+        now = self.get_clock().now().nanoseconds / 1e9
+
+        # Mid-reverse: keep pushing until the burst is done.
+        if now < self._unwedge_until:
+            cmd = Twist()
+            cmd.linear.x = self.get_parameter('unwedge_speed').value
+            cmd.angular.z = 0.3          # curve out rather than straight back
+            self.cmd_pub.publish(cmd)
+            return
+
+        # Standing with a group on purpose is not being stuck.
+        if self._dwell_group is not None:
+            self._last_pose_xy = None
+            return
+
+        pose = self.get_robot_position()
+        if pose is None:
+            return
+
+        if self._last_pose_xy is None:
+            self._last_pose_xy = pose
+            self._last_moved_time = now
+            return
+
+        if math.dist(pose, self._last_pose_xy) > 0.05:
+            self._last_pose_xy = pose
+            self._last_moved_time = now
+            return
+
+        if now - self._last_moved_time > self.get_parameter('unwedge_after_s').value:
+            self.get_logger().warn(
+                f'Motionless for '
+                f'{self.get_parameter("unwedge_after_s").value:.0f}s at '
+                f'({pose[0]:.2f}, {pose[1]:.2f}) - reversing to get free. '
+                'Nav2 could not recover on its own.')
+            self._unwedge_until = now + self.get_parameter('unwedge_duration_s').value
+            self._last_moved_time = now
+            self._last_pose_xy = None
+            self._goal_in_flight = False
 
     def dwell_tick(self) -> None:
         """End the dwell, then release the group and the mission."""
