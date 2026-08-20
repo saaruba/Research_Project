@@ -176,12 +176,28 @@ def main() -> None:
             p['group_key'] = f'group_{lab + 1:02d}'
         ungrouped = []
     else:
-        # Mixed world: keep named groups, and give each unnamed actor its own.
-        loose = 0
-        for p in people:
-            if p['group_key'] is None:
-                loose += 1
-                p['group_key'] = f'ungrouped_{loose:02d}'
+        # ------------------------------------------------------------------
+        # MIXED world: some names carry a group number, some do not.
+        #
+        # Giving every unnamed actor its own group was wrong. A real world had
+        # `final_group2_person_01` (matches) alongside `final_group_person_01`
+        # (no digit, does not match), and the four people standing in a square
+        # at (-3,-2), (-3,-3), (-4,-3), (-4,-2) - obviously one conversation -
+        # came out as four separate "groups of one". That also drags
+        # min_group_size down to 1, so the pipeline starts treating every lone
+        # detection as a group worth approaching.
+        #
+        # Named groups are respected as authored; the unnamed remainder is
+        # clustered by position, exactly as in the all-unnamed case.
+        # ------------------------------------------------------------------
+        loose = [p for p in people if p['group_key'] is None]
+        if loose:
+            print(f"  {len(loose)} actor(s) have no group_NN_ in their name - "
+                  f"clustering those by position (within {GROUP_DISTANCE_M} m).")
+            labels = cluster_by_distance(loose, GROUP_DISTANCE_M)
+            for p, lab in zip(loose, labels):
+                p['group_key'] = f'auto_{lab + 1:02d}'
+            ungrouped = []
 
     by_group: dict[str, list[dict]] = defaultdict(list)
     for p in people:

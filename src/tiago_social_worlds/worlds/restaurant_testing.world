@@ -633,8 +633,8 @@
     <!-- HUMAN GROUP 1                                        -->
     <!-- ===================================================== -->
 
-    <!-- PERSON 1 - STATIC -->
-    <actor name="final_group_person_01_static">
+    <!-- PERSON 1 -->
+    <actor name="final_group1_person_01">
       <pose>0 0 0 0 0 0</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
@@ -667,8 +667,8 @@
     </actor>
 
 
-    <!-- PERSON 2 - STATIC -->
-    <actor name="final_group_person_02_static">
+    <!-- PERSON 2 -->
+    <actor name="final_group1_person_02">
       <pose>0 0 0 0 0 0</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
@@ -700,8 +700,8 @@
       </script>
     </actor>
 
-    <!-- PERSON 3 - TALKING -->
-    <actor name="final_group_person_04_talking">
+    <!-- PERSON 3 -->
+    <actor name="final_group1_person_03">
       <pose>0 0 0 0 0 0</pose>
 
       <skin>
@@ -735,8 +735,8 @@
     </actor>
 
 
-    <!-- PERSON 4 - TALKING -->
-    <actor name="final_group_person_05_talking">
+    <!-- PERSON 4 -->
+    <actor name="final_group1_person_04">
       <pose>0 0 0 0 0 0</pose>
 
       <skin>
@@ -773,8 +773,8 @@
     <!-- HUMAN GROUP 2                                        -->
     <!-- ===================================================== -->
 
-    <!-- PERSON 1 - STATIC -->
-    <actor name="final_group2_person_01_static">
+    <!-- PERSON 1 -->
+    <actor name="final_group2_person_01">
       <pose>0 0 0 0 0 0</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
@@ -807,8 +807,8 @@
     </actor>
 
 
-    <!-- PERSON 2 - STATIC -->
-    <actor name="final_group2_person_02_static">
+    <!-- PERSON 2 -->
+    <actor name="final_group2_person_02">
       <pose>0 0 0 0 0 0</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
@@ -841,8 +841,8 @@
     </actor>
 
 
-    <!-- PERSON 3 - TALKING -->
-    <actor name="final_group2_person_04_talking">
+    <!-- PERSON 3 -->
+    <actor name="final_group2_person_3">
       <pose>0 0 0 0 0 0</pose>
 
       <skin>
@@ -879,8 +879,8 @@
     <!-- HUMAN GROUP 3                                        -->
     <!-- ===================================================== -->
 
-    <!-- PERSON 1 - STATIC -->
-    <actor name="final_group3_person_01_static">
+    <!-- PERSON 1 -->
+    <actor name="final_group3_person_1">
       <pose>0 0 0 0 0 0</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual/talk.dae</filename>
@@ -913,8 +913,8 @@
     </actor>
 
 
-    <!-- PERSON 2 - STATIC -->
-    <actor name="final_group3_person_02_static">
+    <!-- PERSON 2 -->
+    <actor name="final_group3_person_2">
       <pose>0 0 0 0 0 0</pose>
       <skin>
         <filename>file:///workspaces/Research_Project/models/actors/LIRS-HMLG/Female/w_casual_2/talk.dae</filename>
@@ -946,8 +946,8 @@
       </script>
     </actor>
 
-    <!-- PERSON 3 - TALKING -->
-    <actor name="final_group3_person_03_talking">
+    <!-- PERSON 3 -->
+    <actor name="final_group3_person_3">
       <pose>0 0 0 0 0 0</pose>
 
       <skin>
@@ -981,8 +981,8 @@
     </actor>
 
 
-    <!-- PERSON 4 - TALKING -->
-    <actor name="final_group3_person_04_talking">
+    <!-- PERSON 4 -->
+    <actor name="final_group3_person_4">
       <pose>0 0 0 0 0 0</pose>
 
       <skin>
@@ -1015,8 +1015,8 @@
       </script>
     </actor>
  
-     <!-- PERSON 5 - TALKING -->
-    <actor name="final_group3_person_05_talking">
+     <!-- PERSON 5 -->
+    <actor name="final_group3_person_05">
       <pose>0 0 0 0 0 0</pose>
 
       <skin>
