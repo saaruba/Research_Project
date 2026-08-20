@@ -81,6 +81,7 @@ class MissionNode(Node):
         self.index = 0
         self.retries = 0
         self.active = False
+        self.goal_handle = None      # so the approach policy can cancel it
         self.finished = False
         self.waiting_until = 0.0
 
@@ -109,6 +110,12 @@ class MissionNode(Node):
         # approaches that never converge.
         self.create_subscription(PointStamped, '/approach/complete',
                                  self.on_approach_done, 10)
+        # The policy claims Nav2 before it drives. We must actively get out of
+        # the way - cancelling our own goal, not merely refraining from sending
+        # the next one - or the two nodes preempt each other and the robot
+        # never reaches any approach pose.
+        self.create_subscription(PointStamped, '/approach/start',
+                                 self.on_approach_start, 10)
 
         self.create_timer(2.0, self.tick)
         self.get_logger().info(
@@ -172,6 +179,19 @@ class MissionNode(Node):
             return
 
         self.approach_paused_until = now + 5.0
+
+    def on_approach_start(self, msg: PointStamped) -> None:
+        limit = self.get_parameter('max_approach_time').value
+        if self.approach_started is None:
+            self.approach_started = self.now_s()
+            self.approach_target = (msg.point.x, msg.point.y)
+            self.get_logger().info(
+                f'Policy is approaching ({msg.point.x:.2f}, {msg.point.y:.2f}) '
+                f'- cancelling my goal and waiting up to {limit:.0f}s.')
+        # Hold off for the whole approach window; on_approach_done cuts this
+        # short the moment the approach actually succeeds.
+        self.approach_paused_until = self.now_s() + limit
+        self.cancel_current_goal()
 
     def on_approach_done(self, msg: PointStamped) -> None:
         pos = (msg.point.x, msg.point.y)
@@ -279,6 +299,16 @@ class MissionNode(Node):
         except TransformException:
             return None
 
+    def cancel_current_goal(self) -> None:
+        """Actively release Nav2 so the approach policy can use it."""
+        self.active = False
+        if self.goal_handle is not None:
+            try:
+                self.goal_handle.cancel_goal_async()
+            except Exception:
+                pass
+            self.goal_handle = None
+
     def on_response(self, future) -> None:
         try:
             handle = future.result()
@@ -291,6 +321,7 @@ class MissionNode(Node):
             self.active = False
             self.retry_or_skip()
             return
+        self.goal_handle = handle
         handle.get_result_async().add_done_callback(self.on_result)
 
     def on_result(self, future) -> None:

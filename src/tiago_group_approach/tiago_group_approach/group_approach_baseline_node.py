@@ -97,7 +97,9 @@ class GroupApproachBaselineNode(Node):
         # sits inside Hall's personal zone (0.45-1.2 m) - close enough to
         # address someone, which is what HRI approach studies typically find
         # comfortable for a service robot, and not so close as to be intimate.
-        self.declare_parameter('min_person_clearance', 0.7)
+        self.declare_parameter('min_person_clearance', 0.8)
+        # A gap must be at least this wide to count as "somewhere to stand".
+        self.declare_parameter('min_gap_deg', 60.0)
         # BODY RADII. min_person_clearance is the free space we want between
         # the robot's SHELL and a person's body - not between their centres.
         #
@@ -136,6 +138,15 @@ class GroupApproachBaselineNode(Node):
         # immediately, which is what "approach, then leave and continue" means.
         self.approach_done_pub = self.create_publisher(
             PointStamped, '/approach/complete', 10)
+        # Claim Nav2 BEFORE driving.
+        #
+        # The mission and this node both send NavigateToPose goals to the same
+        # server, and the last goal wins. Logs showed approach goals accepted
+        # and "finished" six MILLISECONDS later - instantly preempted by the
+        # mission's next waypoint. The robot never drove to a single approach
+        # pose. Announcing the approach first lets the mission stand down.
+        self.approach_start_pub = self.create_publisher(
+            PointStamped, '/approach/start', 10)
         self._current_target = None
         # 'gap'  - stand in the widest opening of the formation (P-space)
         # 'line' - the original: straight along the robot's line of sight.
@@ -248,12 +259,28 @@ class GroupApproachBaselineNode(Node):
         def angdiff(a, b):
             return abs(math.atan2(math.sin(a - b), math.cos(a - b)))
 
-        # Wide gaps first, but break ties towards the robot's own side.
-        gaps.sort(key=lambda g: (-g[0], angdiff(g[1], robot_bearing)))
+        # REACHABILITY BEFORE WIDTH.
+        #
+        # Sorting by width first sent the robot to the far side of the group:
+        # logs showed "177 deg gap ... 179 deg off the robot's current side"
+        # over and over, which means walking all the way around - straight
+        # through the people. That produced the collisions and the cut-through
+        # events.
+        #
+        # Any gap wide enough to stand in is socially acceptable, so among the
+        # adequate ones take the one nearest the robot's current bearing. The
+        # nearest adequate opening is the one a person would use.
+        min_width = math.radians(self.get_parameter('min_gap_deg').value)
+        usable = [g for g in gaps if g[0] >= min_width]
+        if usable:
+            usable.sort(key=lambda g: angdiff(g[1], robot_bearing))
+            gaps = usable
+        else:
+            gaps.sort(key=lambda g: -g[0])     # nothing ideal - take the widest
 
         for width, mid in gaps:
-            if width < math.radians(45):
-                continue                       # too tight to stand in
+            if width < math.radians(30):
+                continue                       # too tight to stand in at all
             r = clearance
             while r <= max_r:
                 cx = gx + math.cos(mid) * r
@@ -419,6 +446,14 @@ class GroupApproachBaselineNode(Node):
         self._last_goal_xy = (approach_x, approach_y)
         self._last_goal_time = now
         self._current_target = (msg.point.x, msg.point.y)
+
+        # Tell the mission to stand down BEFORE sending the goal, so it stops
+        # issuing waypoints that would preempt this approach.
+        claim = PointStamped()
+        claim.header.frame_id = msg.header.frame_id or self.get_parameter('map_frame').value
+        claim.header.stamp = self.get_clock().now().to_msg()
+        claim.point.x, claim.point.y = msg.point.x, msg.point.y
+        self.approach_start_pub.publish(claim)
 
         self.get_logger().info(
             f'Group centroid ({msg.point.x:.2f}, {msg.point.y:.2f}) -> '
