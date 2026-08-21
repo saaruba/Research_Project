@@ -457,9 +457,24 @@ class GroupPerceptionNode(Node):
             return
 
         # Throttle: perception runs at publish_rate_hz, not camera rate.
+        #
+        # The annotated view is republished on the SKIPPED frames too, using
+        # the most recent boxes. Previously it was only drawn on processed
+        # frames, so the RViz panel updated at ~2 Hz at best and usually looked
+        # frozen or blank - which read as "detection is not happening" when in
+        # fact it was. Redrawing the last known boxes keeps the display live.
         now = self.get_clock().now().nanoseconds / 1e9
         min_period = 1.0 / max(0.1, self.get_parameter('publish_rate_hz').value)
         if now - self.last_process_time < min_period:
+            if getattr(self, '_last_boxes', None) is not None:
+                try:
+                    rgb_p = imgmsg_to_array(rgb_msg)
+                    if rgb_msg.encoding == 'rgb8':
+                        rgb_p = rgb_p[:, :, ::-1]
+                    self.publish_debug_image(rgb_p, self._last_boxes,
+                                             self._last_depth, rgb_msg.header)
+                except Exception:
+                    pass
             return
         self.last_process_time = now
 
@@ -476,6 +491,8 @@ class GroupPerceptionNode(Node):
         depth_m = self.depth_to_metres(np.asarray(depth_raw), depth_msg.encoding)
 
         detections = self.detect_people_boxes(rgb)
+        self._last_boxes = detections
+        self._last_depth = depth_m
         self.publish_debug_image(rgb, detections, depth_m, rgb_msg.header)
         if self.oneshot:
             # Mark done regardless of outcome, so a frame with nobody in it does

@@ -208,6 +208,49 @@ esac
 RESULTS="${PROJECT}/dataset/processed/sim_results"
 BEFORE=$(ls -1 "$RESULTS" 2>/dev/null | wc -l)
 
+# --- Stall watchdog ----------------------------------------------------------
+# Ends a trial that has gone dead, so an unattended overnight batch cannot lose
+# hours to one wedged robot. If the base has not moved at all for STALL_TIMEOUT
+# seconds, it publishes /metrics/finish - the same signal the mission sends on
+# completion - so the recorder still writes a proper results file and the trial
+# closes down cleanly rather than being killed mid-write.
+#
+# 60 s is comfortably longer than any legitimate pause: the dwell at a group is
+# 6 s, a blocked waypoint waits 7 s, and the unwedge reflex fires at 18 s.
+STALL_TIMEOUT="${STALL_TIMEOUT:-60}"
+python3 - "$STALL_TIMEOUT" > /tmp/stall_watchdog.log 2>&1 <<'PY' &
+import sys, time, math
+import rclpy
+from nav_msgs.msg import Odometry
+from std_msgs.msg import Empty
+
+limit = float(sys.argv[1])
+rclpy.init()
+n = rclpy.create_node('stall_watchdog')
+pub = n.create_publisher(Empty, '/metrics/finish', 10)
+state = {'xy': None, 'moved': time.time()}
+
+def cb(msg):
+    p = msg.pose.pose.position
+    now = time.time()
+    if state['xy'] is None or math.dist((p.x, p.y), state['xy']) > 0.05:
+        state['xy'] = (p.x, p.y)
+        state['moved'] = now
+
+n.create_subscription(Odometry, '/mobile_base_controller/odom', cb, 10)
+
+while rclpy.ok():
+    rclpy.spin_once(n, timeout_sec=0.5)
+    if state['xy'] is not None and time.time() - state['moved'] > limit:
+        print(f"STALLED: no motion for {limit:.0f}s - ending the trial", flush=True)
+        for _ in range(3):
+            pub.publish(Empty())
+            time.sleep(0.5)
+        break
+rclpy.shutdown()
+PY
+STALL_PID=$!
+
 ros2 launch tiago_group_approach group_approach.launch.py \
     policy:="$POLICY" \
     min_group_size:="$MINSIZE" \
@@ -222,7 +265,7 @@ LAUNCH_PID=$!
 # signal and makes unattended batches possible - see scripts/run_trials.sh.
 # AUTO_EXIT=0 restores the old behaviour if you want to watch a run.
 if [ "${AUTO_EXIT:-1}" = "1" ]; then
-    LIMIT="${TRIAL_TIMEOUT:-1200}"
+    LIMIT="${TRIAL_TIMEOUT:-1800}"
     START=$(date +%s)
     while kill -0 "$LAUNCH_PID" 2>/dev/null; do
         sleep 5
@@ -232,6 +275,27 @@ if [ "${AUTO_EXIT:-1}" = "1" ]; then
             echo "    Trial complete - results written. Shutting the trial down."
             sleep 8            # let the recorder flush and the bag close
             kill -INT "$LAUNCH_PID" 2>/dev/null
+
+            # Make sure it ACTUALLY dies. A SIGINT to ros2 launch does not
+            # always bring its children down: one trial's policy node outlived
+            # its own trial by six minutes, still issuing recovery commands to
+            # a robot that had finished. Leftover nodes would then interfere
+            # with the next trial in a batch.
+            for i in $(seq 1 15); do
+                kill -0 "$LAUNCH_PID" 2>/dev/null || break
+                sleep 1
+            done
+            if kill -0 "$LAUNCH_PID" 2>/dev/null; then
+                echo "    (launch ignored SIGINT - forcing it down)"
+                kill -9 "$LAUNCH_PID" 2>/dev/null
+            fi
+            pkill -9 -f group_perception_node 2>/dev/null
+            pkill -9 -f group_approach_baseline_node 2>/dev/null
+            pkill -9 -f bc_policy_node 2>/dev/null
+            pkill -9 -f mission_node 2>/dev/null
+            pkill -9 -f metrics_recorder_node 2>/dev/null
+            kill "$STALL_PID" 2>/dev/null
+            sleep 3
             break
         fi
         if [ $(( $(date +%s) - START )) -gt "$LIMIT" ]; then
@@ -242,6 +306,31 @@ if [ "${AUTO_EXIT:-1}" = "1" ]; then
         fi
     done
 fi
+
+# ESCALATE if SIGINT is ignored.
+#
+# `ros2 launch` does not always pass SIGINT on cleanly - the perception node in
+# particular has needed SIGKILL before. Without escalation the script waits
+# forever on a launch that will never exit, which stalls an entire unattended
+# batch after its first trial.
+for i in $(seq 1 20); do
+    kill -0 "$LAUNCH_PID" 2>/dev/null || break
+    sleep 1
+done
+if kill -0 "$LAUNCH_PID" 2>/dev/null; then
+    echo "    Launch ignored SIGINT after 20s - terminating it."
+    kill -TERM "$LAUNCH_PID" 2>/dev/null
+    sleep 5
+    kill -9 "$LAUNCH_PID" 2>/dev/null
+fi
+
+# Anything the launch left behind would collide with the next trial's nodes.
+pkill -9 -f group_perception_node 2>/dev/null
+pkill -9 -f group_approach_baseline_node 2>/dev/null
+pkill -9 -f bc_policy_node 2>/dev/null
+pkill -9 -f mission_node 2>/dev/null
+pkill -9 -f metrics_recorder_node 2>/dev/null
+sleep 3
 
 wait "$LAUNCH_PID" 2>/dev/null
 echo ""

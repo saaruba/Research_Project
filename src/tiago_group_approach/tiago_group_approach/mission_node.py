@@ -62,8 +62,8 @@ class MissionNode(Node):
         super().__init__('mission_node')
 
         self.declare_parameter('waypoints', DEFAULT_MISSION)
-        self.declare_parameter('obstacle_wait', 15.0)
-        self.declare_parameter('max_retries', 3)
+        self.declare_parameter('obstacle_wait', 7.0)
+        self.declare_parameter('max_retries', 2)
         self.declare_parameter('map_frame', 'map')
         self.declare_parameter('robot_frame', 'base_link')
         self.declare_parameter('stop_on_complete', True)
@@ -71,7 +71,7 @@ class MissionNode(Node):
         # Hard ceiling on how long the mission will wait for one approach.
         # Without it a robot parked in front of a group re-arms the pause
         # forever and the tour never continues.
-        self.declare_parameter('max_approach_time', 90.0)
+        self.declare_parameter('max_approach_time', 45.0)
         # How many "we saw them but never went" groups to mop up at the end.
         self.declare_parameter('max_extra_visits', 3)
 

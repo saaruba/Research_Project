@@ -82,6 +82,10 @@ class MetricsRecorderNode(Node):
         self.declare_parameter('min_valid_range_m', 0.20)
         # Ignore collisions during spawn settling / initial localisation.
         self.declare_parameter('collision_grace_s', 5.0)
+        # Added to the measured self-hit radius before anything counts as an
+        # external obstacle. 5 cm is enough to clear sensor noise on the
+        # chassis return without hiding a genuine near-collision.
+        self.declare_parameter('self_hit_margin_m', 0.05)
         # Distance to the GROUP CENTRE that counts as a successful approach.
         #
         # The lower bound is 0.5 m, not 0.8 m, because the approach policy now
@@ -183,11 +187,48 @@ class MetricsRecorderNode(Node):
             return
 
         closest = min(valid)
-        self.min_scan_range = min(self.min_scan_range, closest)
-
         elapsed = time.time() - self.start_time
-        if elapsed < self.get_parameter('collision_grace_s').value:
+
+        # ------------------------------------------------------------------
+        # SELF-HIT CALIBRATION.
+        #
+        # Every trial in the first full experiment reported a collision, and
+        # min_obstacle_range_m came out at 0.200-0.267 m in all 19 runs - twelve
+        # of them at exactly 0.200. That is not nineteen collisions, it is a
+        # constant: the base laser returning the robot's own chassis. With a
+        # 0.30 m collision threshold, that fixed return flagged a collision in
+        # every run before the policy did anything, and task_success is gated on
+        # collisions, so success was 0% for all three policies for reasons that
+        # had nothing to do with their behaviour.
+        #
+        # Rather than hard-coding a guess at the self-hit radius, measure it:
+        # during the grace period the robot is stationary at spawn, so the
+        # smallest persistent return is its own body. Everything at or below
+        # that, plus a margin, is discarded for the rest of the run.
+        # ------------------------------------------------------------------
+        grace = self.get_parameter('collision_grace_s').value
+        if elapsed < grace:
+            self._self_hit = min(getattr(self, '_self_hit', float('inf')), closest)
             return
+
+        if not getattr(self, '_self_hit_logged', False):
+            self._self_hit_logged = True
+            margin = self.get_parameter('self_hit_margin_m').value
+            self._self_floor = (self._self_hit + margin
+                                if math.isfinite(getattr(self, '_self_hit', float('inf')))
+                                else floor)
+            self.get_logger().info(
+                f"Laser self-hit calibrated at {self._self_hit:.3f} m; "
+                f"ignoring returns below {self._self_floor:.3f} m "
+                f"(collision threshold "
+                f"{self.get_parameter('collision_distance_m').value:.2f} m).")
+
+        self_floor = getattr(self, '_self_floor', floor)
+        external = [r for r in valid if r > self_floor]
+        if not external:
+            return
+        closest = min(external)
+        self.min_scan_range = min(self.min_scan_range, closest)
 
         if closest < self.get_parameter('collision_distance_m').value:
             if not self.collision_detected:

@@ -76,7 +76,7 @@ class GroupApproachBaselineNode(Node):
         # still essentially the spawn point. A new goal is now only sent if the
         # target has actually moved, or the previous goal has finished.
         self.declare_parameter('goal_update_threshold_m', 0.40)
-        self.declare_parameter('min_goal_interval_s', 3.0)
+        self.declare_parameter('min_goal_interval_s', 2.0)
 
         # --- Personal-space clearance ----------------------------------------
         # The standoff alone is not enough. It is measured from the group
@@ -114,7 +114,7 @@ class GroupApproachBaselineNode(Node):
         self.declare_parameter('max_standoff', 3.0)
 
         # --- Stuck recovery ---------------------------------------------------
-        self.declare_parameter('stuck_timeout_s', 25.0)
+        self.declare_parameter('stuck_timeout_s', 15.0)
         self.declare_parameter('stuck_move_threshold_m', 0.10)
         self._last_pose_xy = None
         self._last_moved_time = 0.0
@@ -172,7 +172,7 @@ class GroupApproachBaselineNode(Node):
         # an approach: it is the moment a person would use to say hello, and it
         # gives the metrics recorder a stable pose to score rather than a
         # fly-past.
-        self.declare_parameter('dwell_time_s', 8.0)
+        self.declare_parameter('dwell_time_s', 6.0)
         self._dwell_until = 0.0
         self._dwell_group = None
         self.create_timer(1.0, self.dwell_tick)
@@ -191,7 +191,7 @@ class GroupApproachBaselineNode(Node):
         # So: a periodic check, independent of any goal, that reverses the base
         # directly on the velocity topic. Crude, and deliberately so - the point
         # is to get free when the navigation stack cannot.
-        self.declare_parameter('unwedge_after_s', 30.0)
+        self.declare_parameter('unwedge_after_s', 18.0)
         self.declare_parameter('unwedge_speed', -0.15)
         self.declare_parameter('unwedge_duration_s', 3.0)
         self._unwedge_until = 0.0
@@ -220,6 +220,14 @@ class GroupApproachBaselineNode(Node):
         # rather than only against the group's average position.
         self.create_subscription(
             PoseArray, '/detected_people', self.people_callback, 10)
+
+        # Laser, used only to decide whether reversing is safe.
+        from sensor_msgs.msg import LaserScan
+        from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+        self.create_subscription(
+            LaserScan, '/scan_raw', self.scan_callback,
+            QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
+                       history=HistoryPolicy.KEEP_LAST, depth=1))
 
         self.subscription = self.create_subscription(
             PointStamped,
@@ -616,20 +624,77 @@ class GroupApproachBaselineNode(Node):
         self._dwell_group = (gx, gy)
         self._current_target = None
 
+    def scan_callback(self, msg) -> None:
+        self._last_scan = msg
+
+    def rear_is_clear(self) -> bool:
+        """Is there space behind the robot? Unknown counts as 'no'."""
+        scan = getattr(self, '_last_scan', None)
+        if scan is None:
+            return False
+        n = len(scan.ranges)
+        if n == 0:
+            return False
+        # Beams pointing backwards sit at both ends of the array for a
+        # front-facing scanner; take a slice from each end.
+        edge = max(1, n // 12)
+        rear = list(scan.ranges[:edge]) + list(scan.ranges[-edge:])
+        rear = [r for r in rear if math.isfinite(r) and 0.3 < r < 10.0]
+        if not rear:
+            return False
+        return min(rear) > 0.8
+
     def unwedge_tick(self) -> None:
         """Reverse the base directly if the robot has stopped moving at all."""
         now = self.get_clock().now().nanoseconds / 1e9
 
-        # Mid-reverse: keep pushing until the burst is done.
+        # Mid-recovery: keep the burst going until it is done.
+        #
+        # Reversing blind was itself a source of collisions - the robot backed
+        # into tables it could not see behind itself, because TIAGo's laser
+        # covers roughly the front semicircle only. If the rear is not known to
+        # be clear, rotate on the spot instead: turning cannot translate the
+        # robot into an obstacle, and it usually reveals a free direction.
         if now < self._unwedge_until:
             cmd = Twist()
-            cmd.linear.x = self.get_parameter('unwedge_speed').value
-            cmd.angular.z = 0.3          # curve out rather than straight back
+            if self.rear_is_clear():
+                cmd.linear.x = self.get_parameter('unwedge_speed').value
+                cmd.angular.z = 0.3
+            else:
+                cmd.linear.x = 0.0
+                cmd.angular.z = 0.6      # rotate in place - always safe
             self.cmd_pub.publish(cmd)
             return
 
         # Standing with a group on purpose is not being stuck.
         if self._dwell_group is not None:
+            self._last_pose_xy = None
+            return
+
+        # Neither is having nothing to do.
+        #
+        # Once the mission has finished, the robot legitimately sits still. The
+        # first version of this reflex did not check that, so it reversed the
+        # base every 34 seconds for the rest of the session, logging "Nav2
+        # could not recover on its own" while there was nothing to recover
+        # from. Only intervene if we have actually been trying to drive
+        # somewhere recently.
+        if now - self._last_goal_time > 120.0:
+            self._last_pose_xy = None
+            return
+
+        # Neither is standing still because there is nothing left to do.
+        #
+        # Once the mission has finished, the robot parks at its end waypoint
+        # and stops - correctly. The first version of this reflex read that as
+        # "wedged" and reversed the robot every 30 seconds for as long as the
+        # process lived, filling the log and shunting it around an empty room
+        # after the trial had already been recorded.
+        #
+        # Only intervene while the robot is actually trying to get somewhere:
+        # a goal in flight, or one issued in the last minute.
+        recent_goal = (now - self._last_goal_time) < 60.0
+        if not self._goal_in_flight and not recent_goal:
             self._last_pose_xy = None
             return
 

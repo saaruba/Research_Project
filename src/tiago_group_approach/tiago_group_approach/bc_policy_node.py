@@ -67,7 +67,7 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
 
-from geometry_msgs.msg import PointStamped, PoseStamped
+from geometry_msgs.msg import PointStamped, PoseArray, PoseStamped
 from nav2_msgs.action import NavigateToPose
 from sensor_msgs.msg import LaserScan
 
@@ -82,6 +82,12 @@ FEATURE_ORDER = [
     "lidar_min_range", "lidar_mean_range", "linear_x_prev", "angular_z_prev",
     "num_people", "group_bearing_rad", "group_scale_norm",
 ]
+
+# Feature parity between training and inference is not optional. Every value in
+# FEATURE_ORDER must be produced live in the same units, on the same scale, and
+# with the same meaning as the column of the same name in the training table
+# (build_approach_pose_dataset.py). A single feature that silently differs
+# degrades predictions in a way that looks exactly like a bad model.
 
 IMAGE_WIDTH = 640.0          # matches the training-time normalisation
 TYPICAL_PERSON_WIDTH_M = 0.5  # adult shoulder width, for the scale proxy
@@ -124,6 +130,12 @@ class BCPolicyNode(Node):
 
         self.create_subscription(LaserScan, self.get_parameter('scan_topic').value,
                                  self.scan_callback, 10)
+        # Live headcount, so the num_people feature matches training.
+        self._num_people = 2
+        self.create_subscription(
+            PoseArray, '/detected_people',
+            lambda m: setattr(self, '_num_people', max(1, len(m.poses))), 10)
+
         self.create_subscription(PointStamped, '/group_centroid',
                                  self.group_callback, 10)
 
@@ -192,7 +204,16 @@ class BCPolicyNode(Node):
             "lidar_mean_range": lidar_mean,
             "linear_x_prev": self.prev_linear_x,
             "angular_z_prev": self.prev_angular_z,
-            "num_people": 3.0,          # refined below if perception reports it
+            # The ACTUAL number of people perception is reporting.
+            #
+            # This was hard-coded to 3.0 with a comment promising it would be
+            # "refined below if perception reports it" - and it never was. One
+            # of the seven features the models were trained on was therefore a
+            # constant at inference time, while training saw it vary between 1
+            # and 6. Both learned policies have been predicting from a
+            # corrupted input on every call, which is a far more likely cause
+            # of poor live behaviour than anything in the models themselves.
+            "num_people": float(self._num_people),
             "group_bearing_rad": bearing,
             "group_scale_norm": group_scale_norm,
         }
@@ -207,12 +228,25 @@ class BCPolicyNode(Node):
         predicted_travel = math.hypot(pred_dx, pred_dy)
         min_standoff = self.get_parameter('min_standoff_m').value
         max_standoff = self.get_parameter('max_standoff_m').value
-        if predicted_travel > distance + max_standoff:
+
+        # CLAMP, do not reject.
+        #
+        # Rejecting an implausible prediction meant the robot did nothing at
+        # all: no goal, no motion, and from the outside it looked as though the
+        # learned policy simply refused to approach anybody. Since the group's
+        # position is known independently of the model, an over-long prediction
+        # can be scaled back onto the line towards the group instead of thrown
+        # away. The model still chooses the direction and the standoff; only
+        # physically impossible magnitudes are corrected.
+        limit = distance + max_standoff
+        if predicted_travel > limit and predicted_travel > 1e-6:
+            scale = limit / predicted_travel
             self.get_logger().warn(
-                f"Prediction rejected: model wants to travel {predicted_travel:.2f} m "
-                f"but the group is only {distance:.2f} m away. "
-                "Likely out-of-distribution input.")
-            return
+                f"Prediction of {predicted_travel:.2f} m exceeds the plausible "
+                f"{limit:.2f} m (group is {distance:.2f} m away) - scaling by "
+                f"{scale:.2f} rather than discarding it.")
+            pred_dx *= scale
+            pred_dy *= scale
 
         # Relative (robot-frame) prediction -> absolute map goal.
         cos_y, sin_y = math.cos(ryaw), math.sin(ryaw)
