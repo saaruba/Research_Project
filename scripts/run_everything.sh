@@ -321,31 +321,69 @@ echo "      OK - robot is spawned and publishing odometry"
 #     ARM_TYPE=no-arm bash scripts/run_everything.sh
 echo ""
 echo "[1b] Tucking the arm out of the way..."
-ARM_TUCKED=0
+# 'home' is NOT the folded pose - it extends the arm straight out, which is
+# what was happening while this script cheerfully reported "arm tucked". The
+# folded pose is 'tuck_arm' (hence PAL's /arm_tucker node).
+#
+# And the old check treated "the command returned 0" as "the arm moved", so a
+# motion that executed perfectly but put the arm in the wrong place counted as
+# success. The joint angles are now READ BACK and compared against the target,
+# so the script can only claim the arm is tucked if it actually is.
 timeout 60 ros2 action send_goal /play_motion2 \
     play_motion2_msgs/action/PlayMotion2 \
-    "{motion_name: 'home', skip_planning: false}" >/dev/null 2>&1 \
-    && ARM_TUCKED=1
+    "{motion_name: 'tuck_arm', skip_planning: false}" >/dev/null 2>&1 || true
 
-# play_motion2 needs its motion definitions loaded, which does not always
-# happen in the public sim. Fall back to commanding the arm controller
-# directly with TIAGo's standard folded ("travel") joint configuration - no
-# motion library, no MoveIt, just a joint trajectory.
-if [ "$ARM_TUCKED" -eq 0 ]; then
-    timeout 40 ros2 topic pub --once /arm_controller/joint_trajectory \
-        trajectory_msgs/msg/JointTrajectory \
-        "{joint_names: ['arm_1_joint','arm_2_joint','arm_3_joint','arm_4_joint','arm_5_joint','arm_6_joint','arm_7_joint'],
-          points: [{positions: [0.20, -1.34, -0.20, 1.94, -1.57, 1.37, 0.0],
-                    time_from_start: {sec: 4, nanosec: 0}}]}" >/dev/null 2>&1 \
-        && ARM_TUCKED=1
-    sleep 5
-fi
+# Command the controller directly as well. Harmless if the motion already
+# worked, and it is the only route that works when play_motion2 has no motion
+# library loaded (common in the public sim).
+timeout 40 ros2 topic pub --once /arm_controller/joint_trajectory \
+    trajectory_msgs/msg/JointTrajectory \
+    "{joint_names: ['arm_1_joint','arm_2_joint','arm_3_joint','arm_4_joint','arm_5_joint','arm_6_joint','arm_7_joint'],
+      points: [{positions: [0.20, -1.34, -0.20, 1.94, -1.57, 1.37, 0.0],
+                time_from_start: {sec: 5, nanosec: 0}}]}" >/dev/null 2>&1 || true
+sleep 8
 
-if [ "$ARM_TUCKED" -eq 1 ]; then
-    echo "      arm tucked"
-else
-    echo "      could not tuck the arm (harmless - continuing)"
-    echo "      to remove it entirely:  ARM_TYPE=no-arm bash scripts/run_everything.sh"
+python3 - <<'PY'
+import sys, time
+import rclpy
+from sensor_msgs.msg import JointState
+
+TARGET = {'arm_1_joint': 0.20, 'arm_2_joint': -1.34, 'arm_3_joint': -0.20,
+          'arm_4_joint': 1.94, 'arm_5_joint': -1.57, 'arm_6_joint': 1.37}
+TOL = 0.35          # rad - generous; we only care that it is folded, not exact
+
+rclpy.init()
+n = rclpy.create_node('arm_check')
+got = {}
+n.create_subscription(JointState, '/joint_states',
+                      lambda m: got.update(zip(m.name, m.position)), 10)
+end = time.time() + 20
+while time.time() < end and not any(k in got for k in TARGET):
+    rclpy.spin_once(n, timeout_sec=0.5)
+
+if not got:
+    print('      could not read /joint_states - arm state unknown')
+    rclpy.shutdown(); sys.exit(1)
+
+worst, worst_j = 0.0, ''
+for j, want in TARGET.items():
+    if j in got:
+        err = abs(got[j] - want)
+        if err > worst:
+            worst, worst_j = err, j
+
+if worst <= TOL:
+    print(f'      arm tucked (max joint error {worst:.2f} rad)')
+    rclpy.shutdown(); sys.exit(0)
+
+print(f'      ARM NOT TUCKED - {worst_j} is {worst:.2f} rad off target')
+rclpy.shutdown(); sys.exit(1)
+PY
+if [ $? -ne 0 ]; then
+    echo "      (cosmetic only: Nav2 plans with a configured footprint radius," >&2
+    echo "       not the arm pose, so this does not affect any result)" >&2
+    echo "      to remove the arm entirely:" >&2
+    echo "         ARM_TYPE=no-arm bash scripts/run_everything.sh ..." >&2
 fi
 
 # --- 2. Camera ---------------------------------------------------------------
