@@ -446,7 +446,25 @@ class GroupPerceptionNode(Node):
 
     # ---------------------------------------------------------------- main cb
     def image_callback(self, rgb_msg: Image, depth_msg: Image) -> None:
+        # Show the camera feed even before CameraInfo arrives.
+        #
+        # Every early return below used to skip the overlay entirely, so the
+        # RViz panel stayed blank whenever the node was waiting for CameraInfo,
+        # throttling, or in one-shot mode - and a blank panel is indis-
+        # tinguishable from "detection is not working". The view is now the
+        # first thing published, so it is always live and always tells you what
+        # state perception is in.
+        try:
+            preview = imgmsg_to_array(rgb_msg)
+            if rgb_msg.encoding == 'rgb8':
+                preview = preview[:, :, ::-1]
+        except Exception:
+            preview = None
+
         if self.camera_info is None:
+            if preview is not None:
+                self.publish_debug_image(preview, [], None, rgb_msg.header,
+                                         note='WAITING FOR CameraInfo')
             return
 
         # One-shot mode (LocateAnything): detect once, then wait to be
@@ -466,15 +484,11 @@ class GroupPerceptionNode(Node):
         now = self.get_clock().now().nanoseconds / 1e9
         min_period = 1.0 / max(0.1, self.get_parameter('publish_rate_hz').value)
         if now - self.last_process_time < min_period:
-            if getattr(self, '_last_boxes', None) is not None:
-                try:
-                    rgb_p = imgmsg_to_array(rgb_msg)
-                    if rgb_msg.encoding == 'rgb8':
-                        rgb_p = rgb_p[:, :, ::-1]
-                    self.publish_debug_image(rgb_p, self._last_boxes,
-                                             self._last_depth, rgb_msg.header)
-                except Exception:
-                    pass
+            if preview is not None:
+                self.publish_debug_image(preview,
+                                         getattr(self, '_last_boxes', []) or [],
+                                         getattr(self, '_last_depth', None),
+                                         rgb_msg.header, note='(cached boxes)')
             return
         self.last_process_time = now
 
@@ -494,6 +508,25 @@ class GroupPerceptionNode(Node):
         self._last_boxes = detections
         self._last_depth = depth_m
         self.publish_debug_image(rgb, detections, depth_m, rgb_msg.header)
+
+        # Heartbeat, independent of RViz.
+        #
+        # "The detection box does not appear" has two very different causes -
+        # the detector finding nobody, or the display not showing what it
+        # found - and until now there was no way to tell them apart without
+        # RViz. This prints the truth to the terminal every 10 seconds.
+        self._frames = getattr(self, '_frames', 0) + 1
+        self._det_total = getattr(self, '_det_total', 0) + len(detections)
+        if now - getattr(self, '_hb_time', 0.0) > 10.0:
+            self._hb_time = now
+            subs = self.debug_image_pub.get_subscription_count()
+            self.get_logger().info(
+                f"PERCEPTION: {self._frames} frames processed, "
+                f"{self._det_total} detections total, "
+                f"{len(detections)} in the last frame | "
+                f"annotated-image subscribers: {subs}")
+            self._frames = 0
+            self._det_total = 0
         if self.oneshot:
             # Mark done regardless of outcome, so a frame with nobody in it does
             # not cause another 25-second inference immediately afterwards.
@@ -592,7 +625,8 @@ class GroupPerceptionNode(Node):
         self.publish_markers(people_map, centroids)
 
     # -------------------------------------------------------------- publishing
-    def publish_debug_image(self, bgr, detections, depth_m, header) -> None:
+    def publish_debug_image(self, bgr, detections, depth_m, header,
+                            note: str = '') -> None:
         """
         Republish the camera image with detection boxes drawn on it.
 
@@ -611,14 +645,27 @@ class GroupPerceptionNode(Node):
             import cv2
             img = np.ascontiguousarray(bgr.copy())
             for (x1, y1, x2, y2) in detections:
-                d = self.person_depth(depth_m, x1, y1, x2, y2)
+                d = None
+                if depth_m is not None:
+                    try:
+                        d = self.person_depth(depth_m, x1, y1, x2, y2)
+                    except Exception:
+                        d = None
+                # Thick box: a 2 px outline is nearly invisible in a small
+                # RViz panel, which is part of why detections looked absent.
                 cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)),
-                              (0, 255, 0), 2)
-                label = f"person {d:.1f}m" if d is not None else "person ?m"
-                cv2.putText(img, label, (int(x1), max(15, int(y1) - 6)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-            cv2.putText(img, f"detections: {len(detections)}", (8, 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 200, 255), 2)
+                              (0, 255, 0), 3)
+                label = f"person {d:.1f}m" if d is not None else "person"
+                cv2.putText(img, label, (int(x1), max(18, int(y1) - 8)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+            banner = f"detections: {len(detections)}"
+            if note:
+                banner += f"  {note}"
+            # Filled strip behind the text so it is legible over any scene.
+            cv2.rectangle(img, (0, 0), (img.shape[1], 26), (0, 0, 0), -1)
+            cv2.putText(img, banner, (8, 19), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6, (0, 255, 255) if detections else (0, 165, 255), 2)
 
             msg = Image()
             msg.header = header

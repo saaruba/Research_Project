@@ -109,7 +109,7 @@ def generate_launch_description():
             'idle_timeout', default_value='12.0',
             description='Seconds without a detection before patrolling resumes'),
         DeclareLaunchArgument(
-            'confidence', default_value='0.6',
+            'confidence', default_value='0.45',
             description="YOLO person-detection threshold. The old default of "
                         "0.4 is permissive: in a synthetic Gazebo scene it "
                         "accepts furniture and wall edges as people, and with "
