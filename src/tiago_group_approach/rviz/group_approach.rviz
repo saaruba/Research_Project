@@ -6,9 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /What the robot sees1
+        - /What the robot sees1/RGB camera1
         - /What the robot thinks1
       Splitter Ratio: 0.5
-    Tree Height: 169
+    Tree Height: 261
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
@@ -341,7 +342,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Best Effort
-            Value: /head_front_camera/rgb/image_raw
+            Value: /perception/image_annotated
           Value: true
         - Class: rviz_default_plugins/Image
           Enabled: true
@@ -577,26 +578,386 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 14
+      Distance: 22.02927017211914
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -2
-        Y: 2
-        Z: 0
+        X: 1.7897189855575562
+        Y: 2.424088716506958
+        Z: -2.0792434215545654
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8500000238418579
+      Pitch: 0.8600000143051147
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 5.5
-    Saved: ~
+      Yaw: 3.82999849319458
+    Saved:
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
+      - Class: rviz_default_plugins/Orbit
+        Distance: 22.02927017211914
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.7897189855575562
+          Y: 2.424088716506958
+          Z: -2.0792434215545654
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.8600000143051147
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 3.82999849319458
 Window Geometry:
   DETECTIONS (annotated):
     collapsed: false
@@ -607,7 +968,7 @@ Window Geometry:
   Height: 669
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000001000000000000019b00000247fc0200000005fb00000014005200470042002000630061006d006500720061010000003b0000004d0000002800fffffffb0000002c0044004500540045004300540049004f004e0053002000280061006e006e006f0074006100740065006400290200000351000000ed0000019b00000157fb0000001800440065007000740068002000630061006d006500720061010000008e0000004d0000002800fffffffb000000100044006900730070006c00610079007301000000e1000000e4000000c700fffffffb0000000a0056006900650077007301000001cb000000b7000000a000ffffff0000035f0000024700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000002000000000000019b00000247fc0200000003fb0000002c0044004500540045004300540049004f004e0053002000280061006e006e006f0074006100740065006400290200000351000000ed0000019b00000157fb000000100044006900730070006c006100790073010000003b00000140000000c700fffffffb0000000a00560069006500770073010000018100000101000000a000ffffff000000010000014000000247fc0200000002fb00000014005200470042002000630061006d006500720061010000003b000001210000002800fffffffb0000001800440065007000740068002000630061006d0065007200610100000162000001200000002800ffffff000002190000024700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   RGB camera:
     collapsed: false
   Views:
