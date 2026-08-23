@@ -108,9 +108,12 @@ sleep 30
 
 # --- 2. YOLO batch -----------------------------------------------------------
 say "PHASE 2/5  YOLOv8n  -  ${N} trial(s) of each policy"
+# Wall-clock budget. Every completed trial is written to disk as it finishes,
+# so cutting the phase short loses nothing already recorded.
 RESULTS_DIR="$YOLO_DIR" DETECTOR=yolo \
+    timeout "${YOLO_BUDGET:-5h}" \
     bash "${PROJECT}/scripts/run_trials.sh" "$WORLD" "$N" "$POLICIES" \
-    || echo "  (the YOLO batch reported errors - results so far are kept)"
+    || echo "  (the YOLO batch ended early or reported errors - results kept)"
 
 YOLO_COUNT=$(ls -1 "$YOLO_DIR"/*.json 2>/dev/null | wc -l)
 echo ""
@@ -164,9 +167,15 @@ fi
 # --- 4. LocateAnything batch -------------------------------------------------
 if [ "$LA_OK" -eq 1 ]; then
     say "PHASE 4/5  LocateAnything-3B  -  ${N} trial(s) of each policy"
+    # LocateAnything-3B is a 3-billion-parameter vision-language model doing
+    # autoregressive decoding, so a frame costs far more than YOLOv8n's ~5 ms.
+    # Its true rate is unknown until it runs, and at several seconds per frame
+    # thirty trials could occupy fifteen hours. The budget stops the phase
+    # cleanly and summarises whatever completed.
     RESULTS_DIR="$LA_DIR" DETECTOR=locateanything \
+        timeout "${LA_BUDGET:-4h}" \
         bash "${PROJECT}/scripts/run_trials.sh" "$WORLD" "$N" "$POLICIES" \
-        || echo "  (the LA-3B batch reported errors - results so far are kept)"
+        || echo "  (the LA-3B batch ended early or reported errors - results kept)"
 else
     say "PHASE 4/5  SKIPPED  -  LocateAnything-3B unavailable"
     echo "  The YOLO results are complete and unaffected."
