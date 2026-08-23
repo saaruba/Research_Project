@@ -148,6 +148,25 @@ g = d['groups']
 sizes = [x['num_people'] for x in g] or [2]
 print(sum(sizes), len(g), max(1, min(sizes)))" 2>/dev/null || echo "2 1 2")"
 
+# MIN_GROUP_SIZE overrides the automatic value.
+#
+# The automatic value is the smallest target in the world, which in a world
+# containing lone individuals is 1 - so perception publishes single people as
+# approach targets and the policies dutifully approach them. Measured over 23
+# trials the MLP approached a real conversational group in only 4, and engaged
+# lone individuals in 11: it was not avoiding groups, it was being handed
+# individuals.
+#
+# This project is about GROUP approach. A single person has no F-formation, no
+# O-space and no P-space opening, so approaching one cannot demonstrate the
+# behaviour under study. Set MIN_GROUP_SIZE=2 to make conversational groups the
+# only valid targets; lone individuals then remain in the scene as obstacles
+# and distractors, which is the correct role for them.
+if [ -n "${MIN_GROUP_SIZE:-}" ]; then
+    echo "    MIN_GROUP_SIZE=${MIN_GROUP_SIZE} (overriding the automatic ${MINSIZE})"
+    MINSIZE="$MIN_GROUP_SIZE"
+fi
+
 echo ""
 echo "[3] World has ${NPEOPLE} person(s) in ${NGROUPS} group(s)"
 echo "    smallest group = ${MINSIZE} -> min_group_size=${MINSIZE}"
@@ -174,7 +193,7 @@ echo "------------------------------------------------------------"
 # reinforces current behaviour, mistakes included. Improving from experience
 # needs either human corrections (DAgger) or a reward signal (RL).
 if [ "${BAG:-1}" = "1" ]; then
-    BAGDIR="${PROJECT}/dataset/processed/sim_bags/${POLICY}_$(date +%Y%m%d_%H%M%S)"
+    BAGDIR="${PROJECT}/dataset/processed/sim_bags/${DETECTOR:-yolo}_${POLICY}_$(date +%Y%m%d_%H%M%S)"
     mkdir -p "$(dirname "$BAGDIR")"
     echo ""
     echo "[5] Recording a bag to ${BAGDIR}"
@@ -205,7 +224,10 @@ case "$POLICY" in
 esac
 [ -n "$MODEL_ARG" ] && echo "    model: ${MODEL_ARG#model_path:=}"
 
-RESULTS="${PROJECT}/dataset/processed/sim_results"
+# RESULTS_DIR lets a batch keep its output separate - one folder per detector,
+# so YOLO and LocateAnything results never mix in a summary.
+RESULTS="${RESULTS_DIR:-${PROJECT}/dataset/processed/sim_results}"
+mkdir -p "$RESULTS"
 BEFORE=$(ls -1 "$RESULTS" 2>/dev/null | wc -l)
 
 # --- Stall watchdog ----------------------------------------------------------
@@ -263,6 +285,8 @@ ros2 launch tiago_group_approach group_approach.launch.py \
     policy:="$POLICY" \
     min_group_size:="$MINSIZE" \
     groundtruth:="$GT" \
+    output_dir:="$RESULTS" \
+    detector:="${DETECTOR:-yolo}" \
     $MODEL_ARG &
 LAUNCH_PID=$!
 

@@ -45,6 +45,8 @@ echo "============================================================"
 echo "  EXPERIMENT: ${WORLD}"
 echo "  ${N} trial(s) each of: ${POLICIES}"
 echo "  ${TOTAL} trials, roughly $((TOTAL * 5)) minutes"
+echo "  detector: ${DETECTOR:-yolo}"
+echo "  results : ${RESULTS_DIR:-dataset/processed/sim_results}"
 echo "============================================================"
 
 # Fail fast rather than producing a pile of meaningless files.
@@ -89,7 +91,7 @@ echo "  FINISHED: ${DONE} trial(s) in $((ELAPSED / 60)) min"
 [ "$FAILED" -gt 0 ] && echo "  ${FAILED} reported an error - check them before using"
 echo ""
 echo "  Results:"
-ls -1t "${PROJECT}/dataset/processed/sim_results"/*.json 2>/dev/null \
+ls -1t "${RESULTS_DIR:-${PROJECT}/dataset/processed/sim_results}"/*.json 2>/dev/null \
     | head -"$TOTAL" | sed 's|.*/|    |'
 echo ""
 echo "  Aggregate them:"
