@@ -102,6 +102,19 @@ class BCPolicyNode(Node):
         self.declare_parameter('map_frame', 'map')
         self.declare_parameter('robot_frame', 'base_footprint')
         self.declare_parameter('scan_topic', '/scan_raw')
+        # --- Goal throttling --------------------------------------------------
+        # The rule policy has had this for weeks; the learned policies never
+        # did. Without it a goal is issued on every perception frame (~2 Hz),
+        # each one preempting the last, so Nav2 restarts planning continuously
+        # and the robot never executes any of them. The logs show it plainly:
+        # "Nav2 accepted the goal" followed by "Nav2 goal finished" 60 ms later,
+        # hundreds of times per run.
+        self.declare_parameter('goal_update_threshold_m', 0.40)
+        self.declare_parameter('min_goal_interval_s', 2.0)
+        self._last_goal_xy = None
+        self._last_goal_time = 0.0
+        self._goal_in_flight = False
+
         self.declare_parameter('min_standoff_m', 0.6)
         self.declare_parameter('max_standoff_m', 3.0)
 
@@ -263,6 +276,19 @@ class BCPolicyNode(Node):
                 f"Predicted pose was {to_group:.2f} m from the group centre; "
                 f"pushed out to the {min_standoff:.2f} m minimum standoff.")
 
+        # Throttle before sending.
+        now = self.get_clock().now().nanoseconds / 1e9
+        if now - self._last_goal_time < self.get_parameter('min_goal_interval_s').value:
+            return
+        if (self._goal_in_flight and self._last_goal_xy is not None
+                and math.hypot(goal_x - self._last_goal_xy[0],
+                               goal_y - self._last_goal_xy[1])
+                < self.get_parameter('goal_update_threshold_m').value):
+            return
+        self._last_goal_xy = (goal_x, goal_y)
+        self._last_goal_time = now
+        self._goal_in_flight = True
+
         self.get_logger().info(
             f"BC prediction: d=({pred_dx:+.2f}, {pred_dy:+.2f}) m, "
             f"dyaw={math.degrees(pred_dyaw):+.1f} deg  ->  "
@@ -293,10 +319,17 @@ class BCPolicyNode(Node):
         handle = future.result()
         if not handle.accepted:
             self.get_logger().error("Nav2 rejected the goal.")
+            self._goal_in_flight = False
             return
         self.get_logger().info("Nav2 accepted the goal - robot is moving.")
-        handle.get_result_async().add_done_callback(
-            lambda f: self.get_logger().info("Nav2 goal finished."))
+        handle.get_result_async().add_done_callback(self.goal_result_callback)
+
+    def goal_result_callback(self, _future) -> None:
+        # Clearing the flag re-arms the throttle: the next centroid may now
+        # issue a fresh goal. Without this the node would either spam goals
+        # (no flag) or never send another one (flag stuck true).
+        self.get_logger().info("Nav2 goal finished.")
+        self._goal_in_flight = False
 
 
 def main(args=None):
