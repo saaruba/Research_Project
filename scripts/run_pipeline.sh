@@ -219,16 +219,24 @@ BEFORE=$(ls -1 "$RESULTS" 2>/dev/null | wc -l)
 # 6 s, a blocked waypoint waits 7 s, and the unwedge reflex fires at 18 s.
 STALL_TIMEOUT="${STALL_TIMEOUT:-60}"
 python3 - "$STALL_TIMEOUT" > /tmp/stall_watchdog.log 2>&1 <<'PY' &
-import sys, time, math
+import os, sys, time, math
 import rclpy
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Empty
 
 limit = float(sys.argv[1])
+
+# Startup grace. Nav2 - especially with the camera obstacle layer - can take
+# over a minute to accept its first goal, during which the robot legitimately
+# does not move. Without this, three trials in one batch were killed at ~100 s
+# having travelled 3-4 m: the watchdog had counted the boot as a stall.
+GRACE = float(os.environ.get('STALL_GRACE', '90'))
+
 rclpy.init()
 n = rclpy.create_node('stall_watchdog')
 pub = n.create_publisher(Empty, '/metrics/finish', 10)
-state = {'xy': None, 'moved': time.time()}
+started = time.time()
+state = {'xy': None, 'moved': time.time() + GRACE}
 
 def cb(msg):
     p = msg.pose.pose.position

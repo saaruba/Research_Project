@@ -71,7 +71,18 @@ class MissionNode(Node):
         # Hard ceiling on how long the mission will wait for one approach.
         # Without it a robot parked in front of a group re-arms the pause
         # forever and the tour never continues.
-        self.declare_parameter('max_approach_time', 45.0)
+        # Shorter per-approach cap, plus a TOTAL budget.
+        #
+        # The mission surrenders Nav2 whenever the policy claims it. With a 45 s
+        # cap and no overall limit, a policy whose predicted poses rarely
+        # converge can hold the robot indefinitely: measured coverage was 34
+        # map cells for the geometric rule but only 14-15 for the learned
+        # policies, which never crossed the centre of the room. Capping the
+        # total time spent yielding guarantees the tour completes regardless of
+        # which policy is driving, so coverage stops being a property of the
+        # policy's convergence rate.
+        self.declare_parameter('max_approach_time', 25.0)
+        self.declare_parameter('approach_budget_s', 120.0)
         # How many "we saw them but never went" groups to mop up at the end.
         self.declare_parameter('max_extra_visits', 3)
 
@@ -93,6 +104,7 @@ class MissionNode(Node):
         self.approach_paused_until = 0.0
         self.visited: list[tuple[float, float]] = []   # groups already approached
         self.approach_started: float | None = None
+        self.approach_spent = 0.0        # total seconds yielded this run
         self.approach_target: tuple[float, float] | None = None
 
         self.tf_buffer = tf2_ros.Buffer()
@@ -172,6 +184,7 @@ class MissionNode(Node):
             self.get_logger().info(
                 f'Approach time limit ({limit:.0f}s) reached - marking this '
                 'group as visited and resuming the tour.')
+            self.approach_spent += self.now_s() - self.approach_started
             self.visited.append(self.approach_target or pos)
             self.approach_started = None
             self.approach_target = None
@@ -181,6 +194,13 @@ class MissionNode(Node):
         self.approach_paused_until = now + 5.0
 
     def on_approach_start(self, msg: PointStamped) -> None:
+        budget = self.get_parameter('approach_budget_s').value
+        if self.approach_spent >= budget:
+            self.get_logger().info(
+                f'Approach budget of {budget:.0f}s is spent - ignoring further '
+                'approach requests so the tour can finish.',
+                throttle_duration_sec=30.0)
+            return
         limit = self.get_parameter('max_approach_time').value
         if self.approach_started is None:
             self.approach_started = self.now_s()
@@ -197,6 +217,8 @@ class MissionNode(Node):
         pos = (msg.point.x, msg.point.y)
         if self.already_visited(pos):
             return
+        if self.approach_started is not None:
+            self.approach_spent += self.now_s() - self.approach_started
         self.visited.append(pos)
         self.approach_started = None
         self.approach_target = None

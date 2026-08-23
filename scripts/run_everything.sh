@@ -240,10 +240,21 @@ SIMLOG="/tmp/sim_$(date +%s).log"
 ARM_ARG=""
 [ -n "${ARM_TYPE:-}" ] && ARM_ARG="arm_type:=${ARM_TYPE}"
 
+# CAMERA_OBSTACLES=1 replaces PAL's navigation with our own Nav2, configured to
+# take the depth camera as a second observation source. PAL's laser sits at
+# 0.2 m and cannot see a tabletop; the camera can. Default (unset) keeps the
+# original behaviour exactly, so the 60 recorded trials remain reproducible.
+NAV_ARG="navigation:=True"
+if [ "${CAMERA_OBSTACLES:-0}" = "1" ]; then
+    NAV_ARG="navigation:=False"
+    echo "      CAMERA_OBSTACLES=1 - PAL navigation disabled;"
+    echo "      Nav2 will be started separately with the depth scan enabled."
+fi
+
 ros2 launch tiago_gazebo tiago_gazebo.launch.py \
     is_public_sim:=True \
     world_name:="$WORLD" \
-    navigation:=True \
+    $NAV_ARG \
     slam:=False \
     moveit:=False \
     $ARM_ARG \
@@ -772,6 +783,22 @@ echo ""
 # This project's config has the annotated detection view enabled by default,
 # plus the map, laser, TF and group markers - and nothing pointing at hardware
 # that is not there.
+# --- 3c. Camera-based obstacle avoidance (opt-in) ----------------------------
+if [ "${CAMERA_OBSTACLES:-0}" = "1" ]; then
+    echo ""
+    echo "[3c] Starting Nav2 with camera obstacles..."
+    bash "${PROJECT}/scripts/run_nav2_camera.sh" > /tmp/nav2_camera_wrap.log 2>&1 &
+    PIDS+=($!)
+    echo "      waiting for the planner to come up..."
+    for i in $(seq 1 40); do
+        if ros2 node list 2>/dev/null | grep -q "planner_server"; then
+            echo "      OK - Nav2 (camera obstacles) is up"
+            break
+        fi
+        sleep 3
+    done
+fi
+
 RVIZ_CFG="${PROJECT}/src/tiago_group_approach/rviz/group_approach.rviz"
 if [ -f "$RVIZ_CFG" ] && [ "${RVIZ:-1}" = "1" ]; then
     echo ""
