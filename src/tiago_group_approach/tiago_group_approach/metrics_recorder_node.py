@@ -329,9 +329,62 @@ class MetricsRecorderNode(Node):
         if self.goal_centroid is None:
             return False, "no group was ever detected"
 
-        cx, cy = self.goal_centroid
         lo = self.get_parameter('success_standoff_min_m').value
         hi = self.get_parameter('success_standoff_max_m').value
+
+        # ------------------------------------------------------------------
+        # Score against the GROUND-TRUTH groups, not the last perceived one.
+        #
+        # goal_centroid is overwritten by every /group_centroid message, so at
+        # the end of a run it holds whatever perception happened to see LAST -
+        # frequently a false positive against a wall, or a group across the
+        # room the robot never visited. Success was therefore being measured
+        # against the wrong reference point. One MLP trial came within 0.51 m
+        # of a person and intruded on an O-space, yet was scored "never held a
+        # pose in the band": it had approached a real group correctly and was
+        # then judged against a phantom.
+        #
+        # The question the objective actually asks is whether the robot ever
+        # achieved a socially appropriate pose relative to a REAL group. So
+        # every ground-truth group is a valid target, and the run succeeds if
+        # any sample satisfies distance AND heading for any one of them.
+        # ------------------------------------------------------------------
+        targets = [(g['centre_x'], g['centre_y']) for g in self.groups] \
+            if getattr(self, 'groups', None) else []
+        if not targets:
+            targets = [self.goal_centroid]      # no ground truth - fall back
+
+        best_overall = None
+        nearest_overall = float('inf')
+        for cx, cy in targets:
+            nearest = min(math.dist((s['x'], s['y']), (cx, cy))
+                          for s in self.samples)
+            nearest_overall = min(nearest_overall, nearest)
+            for s in self.samples:
+                distance = math.dist((s['x'], s['y']), (cx, cy))
+                if not (lo <= distance <= hi):
+                    continue
+                desired = math.atan2(cy - s['y'], cx - s['x'])
+                error = abs(math.atan2(math.sin(desired - s['yaw']),
+                                       math.cos(desired - s['yaw'])))
+                if best_overall is None or error < best_overall[0]:
+                    best_overall = (error, distance, s['t'], cx, cy)
+
+        if best_overall is None:
+            return False, (f"never held a pose in the [{lo}, {hi}] m band around "
+                           f"any of the {len(targets)} real group(s) "
+                           f"(closest was {nearest_overall:.2f} m)")
+
+        error, distance, t, cx, cy = best_overall
+        if math.degrees(error) > 45.0:
+            return False, (f"reached the social band of the group at "
+                           f"({cx:.1f}, {cy:.1f}) but never faced it: best "
+                           f"heading error {math.degrees(error):.0f} deg")
+        return True, (f"reached a valid approach pose at the group near "
+                      f"({cx:.1f}, {cy:.1f}): {distance:.2f} m, heading "
+                      f"{math.degrees(error):.0f} deg off, at t={t:.0f}s")
+
+        cx, cy = self.goal_centroid
 
         # ------------------------------------------------------------------
         # Scored at CLOSEST APPROACH, not at the final pose.
