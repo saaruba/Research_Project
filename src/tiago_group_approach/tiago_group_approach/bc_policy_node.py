@@ -118,6 +118,28 @@ class BCPolicyNode(Node):
         self.declare_parameter('min_standoff_m', 0.6)
         self.declare_parameter('max_standoff_m', 3.0)
 
+        # --- Approach guard ---------------------------------------------------
+        # A DECLARED intervention, applied identically to both learned policies.
+        #
+        # Measured over 23 trials, the MLP approached a conversational group in
+        # only 4 and engaged lone individuals in 11: shown a group of four or
+        # five it predicted a displacement pointing away and left. The training
+        # set contains few events with num_people above three, so large groups
+        # are out of distribution and the regressor extrapolates.
+        #
+        # The guard corrects DIRECTION ONLY. If the predicted goal would leave
+        # the robot further from the group than it already is, the goal is
+        # re-projected onto the line from the robot to the group centre, KEEPING
+        # the model's own predicted standoff distance. The model still chooses
+        # how far away to stand - which is the socially meaningful decision it
+        # was trained to make - but cannot walk away from the target.
+        #
+        # THIS MUST BE DECLARED IN THE METHODOLOGY. With the guard active the
+        # learned policies are hybrid: learned standoff, geometric direction.
+        # Set approach_guard:=false to evaluate the unmodified model, and report
+        # both if you have time - the difference is itself a result.
+        self.declare_parameter('approach_guard', True)
+
         model_path = Path(self.get_parameter('model_path').value)
         if not model_path.exists():
             self.get_logger().fatal(
@@ -275,6 +297,25 @@ class BCPolicyNode(Node):
             self.get_logger().warn(
                 f"Predicted pose was {to_group:.2f} m from the group centre; "
                 f"pushed out to the {min_standoff:.2f} m minimum standoff.")
+
+        # --- Approach guard: correct a goal that points away from the group ---
+        if self.get_parameter('approach_guard').value:
+            here_to_group = math.hypot(gx - rx, gy - ry)
+            goal_to_group = math.hypot(gx - goal_x, gy - goal_y)
+            if goal_to_group > here_to_group:
+                # Keep the model's chosen standoff; fix only the direction.
+                standoff = max(self.get_parameter('min_standoff_m').value,
+                               min(goal_to_group,
+                                   self.get_parameter('max_standoff_m').value))
+                ux, uy = (rx - gx) / max(here_to_group, 1e-6), \
+                         (ry - gy) / max(here_to_group, 1e-6)
+                goal_x, goal_y = gx + ux * standoff, gy + uy * standoff
+                goal_yaw = math.atan2(gy - goal_y, gx - goal_x)
+                self.get_logger().warn(
+                    f"Approach guard: prediction would have moved the robot "
+                    f"from {here_to_group:.2f} m to {goal_to_group:.2f} m from "
+                    f"the group. Re-projected to {standoff:.2f} m along the "
+                    "approach line.")
 
         # Throttle before sending.
         now = self.get_clock().now().nanoseconds / 1e9

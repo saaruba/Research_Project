@@ -82,15 +82,31 @@ def main() -> None:
     ap.add_argument('--min', type=float, default=0.5)
     ap.add_argument('--max', type=float, default=2.0)
     ap.add_argument('--heading', type=float, default=45.0)
+    ap.add_argument('--min-group-size', type=int, default=1,
+                    help="Only count groups of at least this many people as "
+                         "valid targets. Use 2 to score CONVERSATIONAL GROUPS "
+                         "only: a lone individual has no F-formation and no "
+                         "O-space, so approaching one does not test the "
+                         "group-approach claim this project is about.")
     ap.add_argument('--apply', action='store_true',
                     help='write corrected verdicts back into the JSON files')
     args = ap.parse_args()
 
     gt = json.loads(args.groundtruth.read_text())
-    groups = [(g['centre_x'], g['centre_y']) for g in gt['groups']]
-    print(f"Ground truth: {len(groups)} group(s) from {args.groundtruth.name}")
-    for i, (x, y) in enumerate(groups, 1):
-        print(f"   group {i}: ({x:.2f}, {y:.2f})")
+    all_groups = gt['groups']
+    kept = [g for g in all_groups
+            if g.get('num_people', 1) >= args.min_group_size]
+    groups = [(g['centre_x'], g['centre_y']) for g in kept]
+
+    print(f"Ground truth: {args.groundtruth.name}")
+    print(f"  {len(all_groups)} target(s); scoring against the "
+          f"{len(groups)} with >= {args.min_group_size} people")
+    for g in all_groups:
+        mark = ' ' if g.get('num_people', 1) >= args.min_group_size else ' (excluded)'
+        print(f"   ({g['centre_x']:6.2f}, {g['centre_y']:6.2f})  "
+              f"{g.get('num_people', 1)} people{mark}")
+    if not groups:
+        raise SystemExit("No groups meet --min-group-size; nothing to score.")
 
     files = sorted(p for p in args.results.glob('*.json')
                    if p.name != 'summary.csv')

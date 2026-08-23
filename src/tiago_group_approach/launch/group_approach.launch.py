@@ -73,6 +73,13 @@ def generate_launch_description():
             description='World ground-truth JSON, for the social metrics. '
                         'Without it, O-space/distance/cut-through cannot be scored.'),
         DeclareLaunchArgument('model_path', default_value=DEFAULT_MODEL),
+        DeclareLaunchArgument(
+            'approach_guard', default_value='true',
+            description="Re-project a learned prediction that would move the "
+                        "robot AWAY from the detected group back onto the "
+                        "approach line, keeping the model's own standoff. "
+                        "Declared intervention - set false to evaluate the "
+                        "unmodified model."),
         DeclareLaunchArgument('output_dir', default_value=DEFAULT_RESULTS),
         DeclareLaunchArgument(
             'detector', default_value='yolo',
@@ -170,7 +177,11 @@ def generate_launch_description():
             # instead of the live study testing a subset.
             condition=IfCondition(PythonExpression(
                 ["'", policy, "' in ('bc', 'mlp')"])),
-            parameters=[{'model_path': model_path}],
+            parameters=[{
+                'model_path': model_path,
+                'approach_guard': ParameterValue(
+                    LaunchConfiguration('approach_guard'), value_type=bool),
+            }],
         ),
 
         # --- Exploration -------------------------------------------------------
