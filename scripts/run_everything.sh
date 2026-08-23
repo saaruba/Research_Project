@@ -486,6 +486,23 @@ echo "[3/5] Localisation: activating the map, then publishing map -> odom..."
 # activates them. While map_server is inactive nothing publishes /map, the
 # global costmap has no static layer, and Nav2 cannot plan even once the
 # transform exists.
+# With CAMERA_OBSTACLES=1 PAL's navigation is off, and PAL's navigation is what
+# normally provides map_server. nav2_bringup/navigation_launch.py starts the
+# planner and controllers only - no map server - so nothing publishes /map and
+# RViz shows an empty grid. Start one ourselves BEFORE the activation logic
+# below, which then works unchanged for both paths.
+if [ "${CAMERA_OBSTACLES:-0}" = "1" ]; then
+    if ! ros2 node list 2>/dev/null | grep -q "^/map_server$"; then
+        echo "      starting our own map_server (PAL navigation is disabled)..."
+        ros2 run nav2_map_server map_server --ros-args \
+            -p yaml_filename:="${PROJECT}/src/tiago_social_worlds/maps/${WORLD}.yaml" \
+            -p use_sim_time:=true \
+            > /tmp/map_server.log 2>&1 &
+        PIDS+=($!)
+        sleep 6
+    fi
+fi
+
 MAP_YAML="${PROJECT}/src/tiago_social_worlds/maps/${WORLD}.yaml"
 if [ ! -f "$MAP_YAML" ]; then
     echo "      ERROR: no map at $MAP_YAML" >&2
