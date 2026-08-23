@@ -336,12 +336,19 @@ timeout 60 ros2 action send_goal /play_motion2 \
 # Command the controller directly as well. Harmless if the motion already
 # worked, and it is the only route that works when play_motion2 has no motion
 # library loaded (common in the public sim).
-timeout 40 ros2 topic pub --once /arm_controller/joint_trajectory \
+# --times 6 -r 2, NOT --once.
+#
+# `--once` publishes and exits immediately, frequently before the controller's
+# subscription has finished matching - the message is sent into a void and the
+# arm never moves. That is exactly what happened: arm_4_joint stayed at 0.0
+# while the target was 1.94 rad. Publishing repeatedly over three seconds gives
+# discovery time to complete.
+timeout 40 ros2 topic pub --times 6 -r 2 /arm_controller/joint_trajectory \
     trajectory_msgs/msg/JointTrajectory \
     "{joint_names: ['arm_1_joint','arm_2_joint','arm_3_joint','arm_4_joint','arm_5_joint','arm_6_joint','arm_7_joint'],
       points: [{positions: [0.20, -1.34, -0.20, 1.94, -1.57, 1.37, 0.0],
                 time_from_start: {sec: 5, nanosec: 0}}]}" >/dev/null 2>&1 || true
-sleep 8
+sleep 10
 
 python3 - <<'PY'
 import sys, time
