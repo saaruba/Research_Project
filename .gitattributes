@@ -1,2 +1,47 @@
-*.sh text eol=lf
-* text eol=lf
+# ============================================================================
+# BINARY FILES - DO NOT CONVERT LINE ENDINGS
+# ============================================================================
+# Git guesses whether a file is text. When it guesses wrong on a binary file
+# and applies CRLF<->LF conversion, it CORRUPTS it silently: the file commits
+# and pushes without error, and only fails when something tries to read it on
+# another machine.
+#
+# This was hit for real. Committing the tuned models produced:
+#
+#   warning: CRLF will be replaced by LF in
+#            dataset/processed/models/approach_pose_mlp_ft.joblib
+#   warning: CRLF will be replaced by LF in yolov8n.pt
+#
+# A .joblib with its line endings rewritten will not unpickle. The failure
+# would appear on the lab PC as an unreadable model, far from the cause.
+#
+# Marking them `binary` disables both conversion and diffing.
+# ============================================================================
+
+# Trained models and weights
+*.joblib   binary
+*.pt       binary
+*.pth      binary
+*.onnx     binary
+*.pkl      binary
+
+# Office documents (the dissertation, the overview deck)
+*.docx     binary
+*.dotx     binary
+*.pptx     binary
+*.potx     binary
+*.xlsx     binary
+*.pdf      binary
+
+# Media and recordings
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.mp4      binary
+*.wav      binary
+*.bag      binary
+*.db3      binary
+
+# Everything else: normalise to LF in the repository, which keeps the shell
+# scripts runnable on Linux regardless of the editor that wrote them.
+* text=auto eol=lf
