@@ -109,14 +109,37 @@ class Detector:
     # roughly 35 boxes, far more than any camera frame here contains, and cuts
     # the worst case to about a quarter of the time.
     # ------------------------------------------------------------------------
-    def detect(self, image, max_new_tokens: int = 512) -> list[dict]:
+    def detect(self, image, max_new_tokens: int = 1024) -> list[dict]:
+        # Seeded so a given image still yields the same boxes run to run, even
+        # though decoding is now stochastic. Reproducibility without greedy.
+        self.torch.manual_seed(0)
+        if self.torch.cuda.is_available():
+            self.torch.cuda.manual_seed_all(0)
         with self.torch.no_grad():
             prompt = ("Locate all the instances that matches the following "
                       "description: person.")
             messages = [{"role": "user", "content": [
                 {"type": "image", "image": image}, {"type": "text", "text": prompt}]}]
-            text = self.processor.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True)
+            # ----------------------------------------------------------------
+            # py_apply_chat_template, NOT apply_chat_template  (fixed Aug 2026)
+            #
+            # The model card's reference worker calls py_apply_chat_template.
+            # This code called apply_chat_template, which resolves to the
+            # GENERIC transformers implementation rather than the one shipped
+            # in the model's own custom processor. The generic version does not
+            # produce LocateAnything's expected prompt structure, and a model
+            # given a malformed prompt has no reason to emit a well-formed
+            # answer - a plausible contributor to the repetition loops.
+            #
+            # Kept behind getattr so the service still starts if a future
+            # processor version drops the custom method.
+            # ----------------------------------------------------------------
+            apply = getattr(self.processor, "py_apply_chat_template", None)
+            if apply is None:
+                apply = self.processor.apply_chat_template
+                print("WARNING: processor has no py_apply_chat_template; "
+                      "falling back to the generic template.", flush=True)
+            text = apply(messages, tokenize=False, add_generation_prompt=True)
             images, videos = self.processor.process_vision_info(messages)
             inputs = self.processor(text=[text], images=images, videos=videos,
                                     return_tensors="pt").to(self.device)
@@ -130,8 +153,24 @@ class Detector:
                 max_new_tokens=max_new_tokens,
                 use_cache=True,
                 generation_mode="hybrid",
+                # ------------------------------------------------------------
+                # SAMPLING, NOT GREEDY  (fixed Aug 2026)
+                #
+                # This previously used do_sample=False for reproducibility.
+                # That was a mistake. Greedy decoding is the textbook cause of
+                # degenerate repetition in autoregressive models: once the
+                # highest-probability continuation of "</box>" is "<box>", the
+                # model emits the same box forever, which is precisely the
+                # observed 341-boxes-in-2048-tokens failure.
+                #
+                # These are the model card's own recommended values.
+                # Reproducibility is preserved by seeding the generator below
+                # instead of by removing sampling.
+                # ------------------------------------------------------------
+                temperature=0.7,
+                top_p=0.9,
+                do_sample=True,
                 repetition_penalty=1.1,
-                do_sample=False,          # greedy: same image -> same boxes
                 verbose=False,
             )
             answer = response[0] if isinstance(response, tuple) else response
