@@ -57,3 +57,9 @@ opencv-python-headless==4.13.0.92
 # InconsistentVersionWarning and possibly wrong predictions.
 scikit-learn==1.7.2
 joblib==1.5.3
+
+# scipy is pulled in by scikit-learn. It MUST be pinned: the devcontainer's
+# apt scipy 1.8.0 was built against NumPy 1.x and crashes on import with
+# "_ARRAY_API not found" under the numpy 2.2.6 above. pip will not replace it
+# on its own, because "scipy>=1.8.0" is technically satisfied.
+scipy==1.15.3

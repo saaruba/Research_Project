@@ -88,6 +88,36 @@ def generate_launch_description():
                         "service, ~25 s/frame - start scripts/locateanything_service.py "
                         "in the la3b_env venv first; auto-enables one-shot mode)"),
         DeclareLaunchArgument(
+            'oneshot', default_value='auto',
+            description="'auto' | 'true' | 'false' | 'periodic'. 'auto' keeps "
+                        "the shipped behaviour: continuous for yolo, one-shot "
+                        "for locateanything. 'periodic' re-looks every "
+                        "retrigger_period_s with threaded inference, which is "
+                        "what a LocateAnything POLICY comparison needs - "
+                        "one-shot gives a whole trial a single detection."),
+        DeclareLaunchArgument(
+            'retrigger_period_s', default_value='10.0',
+            description='Seconds between looks in periodic mode. Ignored otherwise.'),
+        DeclareLaunchArgument(
+            'edge_margin_px', default_value='8',
+            description='Reject person boxes within this many pixels of the '
+                        'image border - a partly visible person has an '
+                        'unreliable centroid. 0 disables the filter.'),
+        DeclareLaunchArgument(
+            'dwell_time_s', default_value='30.0',
+            description='How long the robot holds the approach pose beside a '
+                        'group before publishing /approach/complete and moving '
+                        'on. MUST stay below max_approach_time, or the mission '
+                        'cancels the approach before the dwell finishes.'),
+        DeclareLaunchArgument(
+            'max_approach_time', default_value='60.0',
+            description='Mission-side cap on one approach, covering travel AND '
+                        'dwell. Keep comfortably above dwell_time_s.'),
+        DeclareLaunchArgument(
+            'approach_budget_s', default_value='300.0',
+            description='Total seconds per trial the mission will yield to the '
+                        'approach policy across all groups.'),
+        DeclareLaunchArgument(
             'group_distance_m', default_value='1.5',
             description='Max separation for two people to count as one group'),
         DeclareLaunchArgument(
@@ -144,6 +174,11 @@ def generate_launch_description():
                 'min_group_size': ParameterValue(
                     LaunchConfiguration('min_group_size'), value_type=int),
                 'detector': LaunchConfiguration('detector'),
+                'edge_margin_px': ParameterValue(
+                    LaunchConfiguration('edge_margin_px'), value_type=int),
+                'oneshot': LaunchConfiguration('oneshot'),
+                'retrigger_period_s': ParameterValue(
+                    LaunchConfiguration('retrigger_period_s'), value_type=float),
                 'confidence': ParameterValue(
                     LaunchConfiguration('confidence'), value_type=float),
                 'rgb_topic': '/head_front_camera/rgb/image_raw',
@@ -161,7 +196,11 @@ def generate_launch_description():
             condition=IfCondition(PythonExpression(["'", policy, "' == 'rule'"])),
             # float cast: the node declares standoff_distance as 1.2 (float),
             # but a LaunchConfiguration is a string.
-            parameters=[{'standoff_distance': ParameterValue(standoff, value_type=float)}],
+            parameters=[{
+                'standoff_distance': ParameterValue(standoff, value_type=float),
+                'dwell_time_s': ParameterValue(
+                    LaunchConfiguration('dwell_time_s'), value_type=float),
+            }],
         ),
 
         # --- Policy: learned BC ----------------------------------------------
@@ -175,12 +214,20 @@ def generate_launch_description():
             # offline evaluation, which compared rule / RF / MLP / naive; live
             # results for all three make the two analyses directly comparable
             # instead of the live study testing a subset.
+            # The *_v2 and *_ft names are later model generations driven by the
+            # SAME node - only the .joblib differs, and all of them take the
+            # same seven features in the same order. Omitting a name here does
+            # not error: the node simply never starts and the robot patrols
+            # with no approach policy at all, which is silent and easy to miss.
             condition=IfCondition(PythonExpression(
-                ["'", policy, "' in ('bc', 'mlp')"])),
+                ["'", policy, "' in ('bc', 'mlp', "
+                 "'bc_v2', 'mlp_v2', 'gb_v2', 'bc_ft', 'mlp_ft', 'gb_ft')"])),
             parameters=[{
                 'model_path': model_path,
                 'approach_guard': ParameterValue(
                     LaunchConfiguration('approach_guard'), value_type=bool),
+                'dwell_time_s': ParameterValue(
+                    LaunchConfiguration('dwell_time_s'), value_type=float),
             }],
         ),
 
@@ -209,6 +256,13 @@ def generate_launch_description():
             parameters=[{
                 'obstacle_wait': ParameterValue(
                     LaunchConfiguration('obstacle_wait'), value_type=float),
+                # Must exceed dwell_time_s, or the mission cancels the approach
+                # while the robot is still dwelling and the dwell never
+                # completes - so /approach/complete is never published.
+                'max_approach_time': ParameterValue(
+                    LaunchConfiguration('max_approach_time'), value_type=float),
+                'approach_budget_s': ParameterValue(
+                    LaunchConfiguration('approach_budget_s'), value_type=float),
             }],
         ),
 

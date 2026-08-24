@@ -115,15 +115,70 @@ class Detector:
             answer = response[0] if isinstance(response, tuple) else response
 
         width, height = image.size
-        boxes = []
+        raw = []
         for m in re.finditer(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>", str(answer)):
             x1, y1, x2, y2 = (int(g) for g in m.groups())
             # LocateAnything emits coordinates normalised to 0-1000.
-            boxes.append({
+            raw.append({
                 "x1": x1 / 1000.0 * width,  "y1": y1 / 1000.0 * height,
                 "x2": x2 / 1000.0 * width,  "y2": y2 / 1000.0 * height,
             })
-        return boxes
+
+        return self._sanitise(raw, width, height)
+
+    # ------------------------------------------------------------------ output
+    # DEGENERATE OUTPUT GUARD (added Aug 2026)
+    #
+    # Observed live: a single restaurant frame produced 341 "person" boxes in
+    # 9.9 s. The world contains 15 people, and the camera can see at most a
+    # handful of them. This is the classic autoregressive failure - the decoder
+    # falls into a repetition loop emitting <box>...</box> until max_new_tokens
+    # runs out - and greedy decoding with repetition_penalty=1.1 does not
+    # prevent it.
+    #
+    # Passing 341 boxes downstream is worse than passing none: the perception
+    # node back-projects each one, and the clustering then invents groups all
+    # over the map. So the raw output is cleaned here, at the boundary, where
+    # the failure can also be COUNTED - the raw-vs-kept gap is itself a
+    # measurement of how unreliable this detector is, and is logged for exactly
+    # that reason.
+    #
+    # Nothing here is model-specific tuning; it is the minimum needed to stop
+    # obviously impossible output reaching the pipeline.
+    MAX_BOXES = 20              # far more than any single camera frame contains
+    MIN_AREA_FRAC = 0.0005      # smaller than this is noise, not a person
+    MAX_AREA_FRAC = 0.60        # a "person" filling most of the frame is not one
+    DEDUP_TOL_PX = 8.0          # boxes within this are the same detection
+
+    def _sanitise(self, raw: list[dict], width: int, height: int) -> list[dict]:
+        frame_area = float(width * height)
+        kept: list[dict] = []
+
+        for b in raw:
+            x1, y1 = max(0.0, b["x1"]), max(0.0, b["y1"])
+            x2, y2 = min(float(width), b["x2"]), min(float(height), b["y2"])
+            if x2 <= x1 or y2 <= y1:
+                continue                                  # degenerate
+            frac = ((x2 - x1) * (y2 - y1)) / frame_area
+            if frac < self.MIN_AREA_FRAC or frac > self.MAX_AREA_FRAC:
+                continue
+
+            # Drop repeats of a box we already have.
+            if any(abs(x1 - k["x1"]) < self.DEDUP_TOL_PX
+                   and abs(y1 - k["y1"]) < self.DEDUP_TOL_PX
+                   and abs(x2 - k["x2"]) < self.DEDUP_TOL_PX
+                   and abs(y2 - k["y2"]) < self.DEDUP_TOL_PX for k in kept):
+                continue
+
+            kept.append({"x1": x1, "y1": y1, "x2": x2, "y2": y2})
+
+        if len(raw) > self.MAX_BOXES:
+            print(f"  DEGENERATE OUTPUT: model emitted {len(raw)} boxes for one "
+                  f"frame; {len(kept)} survived filtering, capping at "
+                  f"{self.MAX_BOXES}. This is a decoder repetition loop, not "
+                  f"{len(raw)} people.", flush=True)
+
+        return kept[:self.MAX_BOXES]
 
 
 class Handler(BaseHTTPRequestHandler):

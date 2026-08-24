@@ -63,11 +63,23 @@ PARAMETERS
 ----------
     detector           (yolo) 'yolo' or 'locateanything'
     service_url        (http://127.0.0.1:8765) LocateAnything service endpoint
-    oneshot            (auto)  'auto' | 'true' | 'false'. In one-shot mode the
-                              node detects ONCE, publishes the centroid, and
-                              then stops until re-triggered by publishing to
-                              /perception/trigger. 'auto' enables it for
-                              locateanything and disables it for yolo.
+    oneshot            (auto)  'auto' | 'true' | 'false' | 'periodic'.
+                              In one-shot mode the node detects ONCE, publishes
+                              the centroid, and then stops until re-triggered by
+                              publishing to /perception/trigger. 'auto' enables
+                              it for locateanything and disables it for yolo.
+
+                              'periodic' (added Aug 2026) re-looks every
+                              retrigger_period_s with the inference running in a
+                              WORKER THREAD, so the node never blocks. This is
+                              the mode to use for a LocateAnything experiment
+                              that is meant to compare policies: one-shot gives
+                              a trial exactly ONE detection, from the start
+                              pose, and leaves the robot blind thereafter.
+    retrigger_period_s (10.0) how often periodic mode takes another look. Only
+                              read when oneshot:=periodic. At ~8.4 s/inference
+                              a 10 s period keeps roughly one look in flight at
+                              a time without queueing.
     group_distance_m   (1.5)  two people join the same group if within this
                               distance. Chosen from the F-formation literature:
                               a standing conversational group typically has an
@@ -93,6 +105,7 @@ RUN
 from __future__ import annotations
 
 import math
+import threading
 
 import numpy as np
 
@@ -175,11 +188,18 @@ class GroupPerceptionNode(Node):
         self.declare_parameter('min_group_size', 2)
         self.declare_parameter('confidence', 0.4)
         self.declare_parameter('max_range_m', 8.0)
+        # Reject detections whose box touches the image border - a partly
+        # visible person has an unreliable centroid. See image_callback.
+        self.declare_parameter('edge_margin_px', 8)
         self.declare_parameter('publish_rate_hz', 2.0)
         self.declare_parameter('model', 'yolov8n.pt')
         self.declare_parameter('detector', 'yolo')
         self.declare_parameter('service_url', 'http://127.0.0.1:8765')
         self.declare_parameter('oneshot', 'auto')
+        # --- LocateAnything periodic mode (added Aug 2026) -------------------
+        # How often a periodic-mode detector takes another look. Only read when
+        # oneshot:=periodic; ignored entirely by the yolo and one-shot paths.
+        self.declare_parameter('retrigger_period_s', 10.0)
 
         self.camera_info: CameraInfo | None = None
         self.last_process_time = 0.0
@@ -199,6 +219,35 @@ class GroupPerceptionNode(Node):
         else:
             self.oneshot = oneshot_param in ('true', '1', 'yes')
         self.oneshot_done = False
+
+        # ====================================================================
+        # PERIODIC MODE  (added Aug 2026, LocateAnything-3B only in practice)
+        # ====================================================================
+        # One-shot mode detects ONCE per node lifetime. Nothing in the pipeline
+        # publishes /perception/trigger, so a LocateAnything trial got exactly
+        # one look, from the start pose, and was blind for the rest of the run.
+        #
+        # Periodic mode instead re-looks every retrigger_period_s. Because a
+        # LocateAnything inference takes ~8.4 s and rclpy.spin() is single
+        # threaded, doing that inline would freeze the node for 8.4 s at a time
+        # - no markers, no annotated image, no callbacks. So the inference runs
+        # in a WORKER THREAD and the callback keeps publishing cached boxes
+        # while it is in flight.
+        #
+        # Neither branch below changes the yolo or one-shot code paths: mode is
+        # 'continuous' for yolo and 'oneshot' for locateanything unless the
+        # oneshot parameter is explicitly set to 'periodic'.
+        if oneshot_param == 'periodic':
+            self.mode = 'periodic'
+        elif self.oneshot:
+            self.mode = 'oneshot'
+        else:
+            self.mode = 'continuous'
+
+        self._worker = None              # threading.Thread while inference runs
+        self._worker_lock = threading.Lock()
+        self._pending = None             # (detections, rgb, depth_m, header)
+        self._last_dispatch_time = 0.0
 
         if self.detector_kind == 'yolo':
             # Imported lazily so the node gives a clear error rather than a
@@ -220,15 +269,23 @@ class GroupPerceptionNode(Node):
             url = self.get_parameter('service_url').value
             self.get_logger().info(
                 f"Detector: LocateAnything-3B via {url}\n"
-                f"  Measured ~25.6 s/frame on this hardware, so one-shot mode is "
-                f"{'ON' if self.oneshot else 'OFF'}.\n"
+                f"  Measured ~25.6 s/frame on this hardware. Mode: {self.mode.upper()}"
+                + (f" (re-look every {self.get_parameter('retrigger_period_s').value:.0f} s, "
+                   f"threaded)\n" if self.mode == 'periodic' else "\n")
+                +
                 f"  The service must already be running IN THE la3b_env venv:\n"
                 f"    source la3b_env/bin/activate\n"
                 f"    python3 scripts/locateanything_service.py")
             self.check_service()
 
         # --- TF -------------------------------------------------------------
-        self.tf_buffer = tf2_ros.Buffer()
+        # A 30 s cache, not the 10 s default. Detections are transformed at the
+        # timestamp of the image they came from, so that the robot's motion
+        # between capture and processing does not smear the person positions.
+        # In periodic mode a LocateAnything result arrives ~8.4 s after capture,
+        # which sits uncomfortably close to the default cache horizon; 30 s
+        # leaves margin. Costs a little memory and changes nothing for yolo.
+        self.tf_buffer = tf2_ros.Buffer(cache_time=Duration(seconds=30.0))
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         # --- Publishers -------------------------------------------------------
@@ -293,7 +350,77 @@ class GroupPerceptionNode(Node):
         """Re-arm a one-shot detector for another look."""
         self.oneshot_done = False
         self.last_process_time = 0.0
+        # In periodic mode a trigger forces the next look immediately rather
+        # than waiting out the remainder of retrigger_period_s.
+        self._last_dispatch_time = 0.0
         self.get_logger().info("Re-triggered: will detect on the next frame.")
+
+    # ------------------------------------------------- periodic mode (Aug 2026)
+    def _infer_worker(self, rgb_msg, depth_msg, rgb, depth_m, t_start) -> None:
+        """Run one inference off the ROS thread and park the result.
+
+        Nothing here touches ROS state beyond the logger and the lock-protected
+        handoff, because rclpy callbacks run on the spin thread and publishing
+        from a worker would not be safe.
+        """
+        try:
+            detections = self.detect_people_boxes(rgb)
+        except Exception as exc:  # noqa: BLE001
+            self.get_logger().warn(f"periodic inference failed: {exc}")
+            detections = []
+        with self._worker_lock:
+            self._pending = (detections, rgb_msg, depth_msg, rgb, depth_m, t_start)
+
+    def periodic_step(self, rgb_msg, depth_msg, preview):
+        """Non-blocking detection tick.
+
+        Returns (rgb_msg, depth_msg, rgb, depth_m, detections) when a worker
+        has produced a result - the messages being those of the frame the
+        detection was computed FROM - or None while waiting.
+        """
+        now = self.get_clock().now().nanoseconds / 1e9
+
+        with self._worker_lock:
+            pending = self._pending
+            self._pending = None
+            in_flight = self._worker is not None and self._worker.is_alive()
+
+        if pending is not None:
+            detections, p_rgb_msg, p_depth_msg, p_rgb, p_depth_m, t_start = pending
+            self.get_logger().info(
+                f"PERIODIC: look complete in {now - t_start:.1f} s, "
+                f"{len(detections)} detection(s)")
+            return p_rgb_msg, p_depth_msg, p_rgb, p_depth_m, detections
+
+        period = float(self.get_parameter('retrigger_period_s').value)
+        if not in_flight and (now - self._last_dispatch_time) >= period:
+            try:
+                rgb = imgmsg_to_array(rgb_msg)
+                if rgb_msg.encoding == 'rgb8':
+                    rgb = rgb[:, :, ::-1]
+                depth_raw = imgmsg_to_array(depth_msg)
+            except Exception as exc:  # noqa: BLE001
+                self.get_logger().warn(f"image conversion failed: {exc}")
+                return None
+            depth_m = self.depth_to_metres(np.asarray(depth_raw), depth_msg.encoding)
+
+            self._last_dispatch_time = now
+            self._worker = threading.Thread(
+                target=self._infer_worker,
+                args=(rgb_msg, depth_msg, rgb, depth_m, now),
+                daemon=True)
+            self._worker.start()
+            in_flight = True
+
+        # The view stays live either way, and says which state it is in.
+        if preview is not None:
+            self.publish_debug_image(
+                preview,
+                getattr(self, '_last_boxes', []) or [],
+                getattr(self, '_last_depth', None),
+                rgb_msg.header,
+                note='(looking...)' if in_flight else '(cached boxes)')
+        return None
 
     # -------------------------------------------------------- detector backends
     def check_service(self) -> None:
@@ -467,44 +594,66 @@ class GroupPerceptionNode(Node):
                                          note='WAITING FOR CameraInfo')
             return
 
-        # One-shot mode (LocateAnything): detect once, then wait to be
-        # re-triggered. At ~25 s/frame a continuous loop is not possible, and
-        # repeatedly queueing 25-second inferences would make the node
-        # unresponsive rather than merely slow.
-        if self.oneshot and self.oneshot_done:
-            return
-
-        # Throttle: perception runs at publish_rate_hz, not camera rate.
+        # ====================================================================
+        # PERIODIC MODE (added Aug 2026) - threaded, non-blocking.
         #
-        # The annotated view is republished on the SKIPPED frames too, using
-        # the most recent boxes. Previously it was only drawn on processed
-        # frames, so the RViz panel updated at ~2 Hz at best and usually looked
-        # frozen or blank - which read as "detection is not happening" when in
-        # fact it was. Redrawing the last known boxes keeps the display live.
-        now = self.get_clock().now().nanoseconds / 1e9
-        min_period = 1.0 / max(0.1, self.get_parameter('publish_rate_hz').value)
-        if now - self.last_process_time < min_period:
-            if preview is not None:
-                self.publish_debug_image(preview,
-                                         getattr(self, '_last_boxes', []) or [],
-                                         getattr(self, '_last_depth', None),
-                                         rgb_msg.header, note='(cached boxes)')
-            return
-        self.last_process_time = now
+        # periodic_step() returns None while it is waiting (having kept the
+        # annotated view alive), or the captured frame and its detections once
+        # a worker thread has finished. Rebinding rgb_msg/depth_msg to the
+        # frame the detection actually came FROM is what makes the shared
+        # downstream code below correct without modification: it transforms at
+        # rgb_msg.header.stamp, so the people land where they were when the
+        # image was taken, not where the robot is 8 seconds later.
+        #
+        # The yolo and one-shot paths in the else-branch are unchanged.
+        # ====================================================================
+        if self.mode == 'periodic':
+            stepped = self.periodic_step(rgb_msg, depth_msg, preview)
+            if stepped is None:
+                return
+            rgb_msg, depth_msg, rgb, depth_m, detections = stepped
+            now = self.get_clock().now().nanoseconds / 1e9
+        else:
+            # One-shot mode (LocateAnything): detect once, then wait to be
+            # re-triggered. At ~25 s/frame a continuous loop is not possible,
+            # and repeatedly queueing 25-second inferences would make the node
+            # unresponsive rather than merely slow.
+            if self.oneshot and self.oneshot_done:
+                return
 
-        try:
-            rgb = imgmsg_to_array(rgb_msg)
-            # YOLO expects BGR (OpenCV convention); Gazebo publishes rgb8.
-            if rgb_msg.encoding == 'rgb8':
-                rgb = rgb[:, :, ::-1]
-            depth_raw = imgmsg_to_array(depth_msg)
-        except Exception as exc:
-            self.get_logger().warn(f"image conversion failed: {exc}")
-            return
+            # Throttle: perception runs at publish_rate_hz, not camera rate.
+            #
+            # The annotated view is republished on the SKIPPED frames too,
+            # using the most recent boxes. Previously it was only drawn on
+            # processed frames, so the RViz panel updated at ~2 Hz at best and
+            # usually looked frozen or blank - which read as "detection is not
+            # happening" when in fact it was. Redrawing the last known boxes
+            # keeps the display live.
+            now = self.get_clock().now().nanoseconds / 1e9
+            min_period = 1.0 / max(0.1, self.get_parameter('publish_rate_hz').value)
+            if now - self.last_process_time < min_period:
+                if preview is not None:
+                    self.publish_debug_image(preview,
+                                             getattr(self, '_last_boxes', []) or [],
+                                             getattr(self, '_last_depth', None),
+                                             rgb_msg.header, note='(cached boxes)')
+                return
+            self.last_process_time = now
 
-        depth_m = self.depth_to_metres(np.asarray(depth_raw), depth_msg.encoding)
+            try:
+                rgb = imgmsg_to_array(rgb_msg)
+                # YOLO expects BGR (OpenCV convention); Gazebo publishes rgb8.
+                if rgb_msg.encoding == 'rgb8':
+                    rgb = rgb[:, :, ::-1]
+                depth_raw = imgmsg_to_array(depth_msg)
+            except Exception as exc:
+                self.get_logger().warn(f"image conversion failed: {exc}")
+                return
 
-        detections = self.detect_people_boxes(rgb)
+            depth_m = self.depth_to_metres(np.asarray(depth_raw), depth_msg.encoding)
+
+            detections = self.detect_people_boxes(rgb)
+
         self._last_boxes = detections
         self._last_depth = depth_m
         self.publish_debug_image(rgb, detections, depth_m, rgb_msg.header)
@@ -541,10 +690,40 @@ class GroupPerceptionNode(Node):
         max_range = self.get_parameter('max_range_m').value
         optical_frame = rgb_msg.header.frame_id
         map_frame = self.get_parameter('map_frame').value
+        edge_margin = int(self.get_parameter('edge_margin_px').value)
+        img_h, img_w = depth_m.shape[:2]
 
         # --- Back-project each detection and transform into the map frame ----
         people_map: list[tuple[float, float]] = []
         for x1, y1, x2, y2 in detections:
+            # ----------------------------------------------------------------
+            # REJECT BOXES CLIPPED BY THE IMAGE BORDER (added Aug 2026)
+            #
+            # A person only partly in frame gets a box bounded by the frame
+            # edge, so its CENTROID is not the person's centre - it is the
+            # centre of whatever fraction is visible. Back-projecting that
+            # puts them metres from where they are, and the error grows the
+            # more of them is cut off.
+            #
+            # Observed in a smoke trial: bbox=(0,29)-(48,479) - a 48 px sliver
+            # down the whole left edge - reported depth 1.23 m and mapped to
+            # (4.83, -1.05). The approach policy then saw a person inside its
+            # 1.35 m clearance radius and backed off on every cycle, so the
+            # goal moved continuously and the robot covered 15 m in 604 s.
+            #
+            # A partial person at the frame edge is never the group the robot
+            # should be approaching, so dropping them costs nothing. Set
+            # edge_margin_px:=0 to disable.
+            # ----------------------------------------------------------------
+            if edge_margin > 0 and (
+                    x1 <= edge_margin or y1 <= edge_margin
+                    or x2 >= img_w - edge_margin or y2 >= img_h - edge_margin):
+                self.get_logger().info(
+                    f"  rejected edge-clipped box ({x1:.0f},{y1:.0f})-"
+                    f"({x2:.0f},{y2:.0f}) - partial person, centroid unreliable",
+                    throttle_duration_sec=5.0)
+                continue
+
             depth = self.person_depth(depth_m, x1, y1, x2, y2)
             if depth is None or depth > max_range:
                 continue

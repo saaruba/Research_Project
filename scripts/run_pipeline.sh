@@ -220,6 +220,29 @@ MODELS="${PROJECT}/dataset/processed/models"
 case "$POLICY" in
     mlp) MODEL_ARG="model_path:=${MODELS}/approach_pose_mlp_tuned.joblib" ;;
     bc)  MODEL_ARG="model_path:=${MODELS}/approach_pose_random_forest_tuned.joblib" ;;
+    # --- v2 models (Aug 2026) -------------------------------------------------
+    # Trained on the re-segmented dataset, which labels whole approaches rather
+    # than the final adjustment. These use the SAME seven features as v1, so
+    # they are drop-in replacements needing no change to bc_policy_node.
+    # The v1 policies above are untouched and remain the reported baseline.
+    bc_v2)  MODEL_ARG="model_path:=${MODELS}/approach_pose_random_forest_v2seg.joblib" ;;
+    mlp_v2) MODEL_ARG="model_path:=${MODELS}/approach_pose_mlp_v2seg.joblib" ;;
+    gb_v2)  MODEL_ARG="model_path:=${MODELS}/approach_pose_gradient_boosting_v2seg.joblib" ;;
+    # --- hyper-parameter-searched models (Aug 2026) ---------------------------
+    # Winners of a 360-model random search (120 configs x 3 families), selected
+    # on the validation sessions. Offline test error: mlp_ft 0.627 m / 26.1%,
+    # gb_ft 0.631 m / 24.9%, rf_ft 0.636 m / 24.8%, against the shipped
+    # random_forest_tuned at 0.656 m / 23.5%.
+    #
+    # Same seven features in the same order as every other model here, so these
+    # are drop-in and bc_policy_node needs no change. The shipped `bc` and `mlp`
+    # policies above are untouched and remain the reported baseline.
+    #
+    # NOTE: these .joblib files are under dataset/, which is git-ignored - they
+    # must be copied between machines by hand, not pulled.
+    bc_ft)  MODEL_ARG="model_path:=${MODELS}/approach_pose_rf_ft.joblib" ;;
+    mlp_ft) MODEL_ARG="model_path:=${MODELS}/approach_pose_mlp_ft.joblib" ;;
+    gb_ft)  MODEL_ARG="model_path:=${MODELS}/approach_pose_gb_ft.joblib" ;;
     *)   MODEL_ARG="" ;;
 esac
 [ -n "$MODEL_ARG" ] && echo "    model: ${MODEL_ARG#model_path:=}"
@@ -287,6 +310,12 @@ ros2 launch tiago_group_approach group_approach.launch.py \
     groundtruth:="$GT" \
     output_dir:="$RESULTS" \
     detector:="${DETECTOR:-yolo}" \
+    oneshot:="${ONESHOT:-auto}" \
+    retrigger_period_s:="${RETRIGGER_PERIOD_S:-10.0}" \
+    edge_margin_px:="${EDGE_MARGIN_PX:-8}" \
+    dwell_time_s:="${DWELL_TIME_S:-30.0}" \
+    max_approach_time:="${MAX_APPROACH_TIME:-60.0}" \
+    approach_budget_s:="${APPROACH_BUDGET_S:-300.0}" \
     $MODEL_ARG &
 LAUNCH_PID=$!
 

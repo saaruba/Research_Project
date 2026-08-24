@@ -172,7 +172,27 @@ if [ "$LA_OK" -eq 1 ]; then
     # Its true rate is unknown until it runs, and at several seconds per frame
     # thirty trials could occupy fifteen hours. The budget stops the phase
     # cleanly and summarises whatever completed.
+    # ------------------------------------------------------------------------
+    # PERIODIC MODE (Aug 2026) - why this phase is no longer one-shot
+    # ------------------------------------------------------------------------
+    # One-shot mode detects ONCE per node lifetime, and nothing publishes
+    # /perception/trigger, so the earlier LA-3B batch gave each trial exactly
+    # one look from the start pose: 31 inferences across 30 trials. Every group
+    # outside that single camera frustum was never seen, the policies had
+    # nothing to act on, and the batch measured open-loop patrol rather than
+    # approach behaviour - which is why all three policies scored alike.
+    #
+    # Periodic mode re-looks every RETRIGGER_PERIOD_S with the inference on a
+    # worker thread, so the node keeps publishing instead of freezing for 8.4 s.
+    # At ~8.4 s/inference and a ~300 s trial this yields roughly 30 looks per
+    # trial instead of 1. It is still not closed-loop perception at 0.12 Hz,
+    # and the headline finding is unchanged; it simply lets the comparison be
+    # made fairly.
+    #
+    # Set ONESHOT=true to reproduce the original one-shot batch exactly.
     RESULTS_DIR="$LA_DIR" DETECTOR=locateanything \
+        ONESHOT="${ONESHOT:-periodic}" \
+        RETRIGGER_PERIOD_S="${RETRIGGER_PERIOD_S:-10.0}" \
         timeout "${LA_BUDGET:-4h}" \
         bash "${PROJECT}/scripts/run_trials.sh" "$WORLD" "$N" "$POLICIES" \
         || echo "  (the LA-3B batch ended early or reported errors - results kept)"

@@ -32,11 +32,13 @@
 #    in one environment breaks the data pipeline. Use a SEPARATE virtual
 #    environment and requirements-locateanything.txt instead.
 #
-# 3. matplotlib / scipy.
+# 3. matplotlib.
 #    Referenced in some older script comments but not actually imported by
-#    any script in this repo (verified). Left out to keep the install lean
-#    and to avoid re-triggering the numpy/scipy ABI conflicts hit earlier in
-#    the project. Add them manually only if you write new plotting code.
+#    any script in this repo (verified). Left out to keep the install lean.
+#    Add it manually only if you write new plotting code.
+#
+#    NOTE: scipy USED to be excluded here for the same reason, and that was a
+#    mistake - see the scipy pin below.
 # ============================================================================
 
 
@@ -54,6 +56,26 @@ pandas==2.3.3
 #   grid_search_approach_pose.py, evaluate_approach_pose.py
 scikit-learn==1.7.2
 joblib==1.5.3
+
+
+# --- scipy: PIN IT, DO NOT RELY ON THE SYSTEM PACKAGE ------------------------
+# scikit-learn imports scipy.sparse, so scipy is a transitive dependency and
+# pip will happily accept whatever is already installed. On the ROS 2 Humble
+# devcontainer that is the apt package scipy 1.8.0 in
+# /usr/lib/python3/dist-packages, which was compiled against NumPy 1.x. With
+# the numpy 2.2.6 pinned above, importing sklearn then dies with:
+#
+#     A module that was compiled using NumPy 1.x cannot be run in NumPy 2.2.6
+#     AttributeError: _ARRAY_API not found
+#     ImportError: numpy.core.multiarray failed to import
+#
+# pip reports "Requirement already satisfied: scipy>=1.8.0" and moves on, so
+# nothing looks wrong until sklearn is first imported. Pinning a NumPy-2 build
+# forces a user-site install that shadows the stale system one.
+#
+# This exact combination is verified working on Python 3.10.12:
+#     numpy 2.2.6 / scipy 1.15.3 / scikit-learn 1.7.2 / pandas 2.3.3
+scipy==1.15.3
 
 
 # --- Video / image processing -----------------------------------------------
