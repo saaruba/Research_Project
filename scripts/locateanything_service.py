@@ -87,7 +87,29 @@ class Detector:
             print("WARNING: no CUDA device - CPU inference will be extremely slow.",
                   flush=True)
 
-    def detect(self, image, max_new_tokens: int = 2048) -> list[dict]:
+    # ------------------------------------------------------------------------
+    # TOKEN BUDGET  (reduced from 2048, Aug 2026)
+    #
+    # The service log makes the failure mode obvious once you line the timings
+    # up with the counts:
+    #
+    #     detect: 341 person(s) in 10.13s     <- ran to the token limit
+    #     detect:   0 person(s) in  0.33s     <- stopped immediately
+    #     detect: 341 person(s) in  9.89s
+    #     detect:   3 person(s) in  0.45s
+    #
+    # It is bimodal. Either the decoder emits a sensible answer and stops in
+    # well under a second, or it falls into a repetition loop emitting
+    # <box>...</box> until max_new_tokens runs out. 341 boxes is not 341
+    # people; it is 2048 tokens of the same box.
+    #
+    # So the ~10 s per frame was never the cost of understanding the image - it
+    # was the cost of generating two thousand tokens of garbage. Capping the
+    # budget bounds BOTH the nonsense and the latency: 512 tokens still allows
+    # roughly 35 boxes, far more than any camera frame here contains, and cuts
+    # the worst case to about a quarter of the time.
+    # ------------------------------------------------------------------------
+    def detect(self, image, max_new_tokens: int = 512) -> list[dict]:
         with self.torch.no_grad():
             prompt = ("Locate all the instances that matches the following "
                       "description: person.")
