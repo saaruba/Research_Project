@@ -1,21 +1,14 @@
 # ============================================================================
-# BINARY FILES - DO NOT CONVERT LINE ENDINGS
+# BINARY FILES MUST BE MARKED BINARY
 # ============================================================================
-# Git guesses whether a file is text. When it guesses wrong on a binary file
-# and applies CRLF<->LF conversion, it CORRUPTS it silently: the file commits
-# and pushes without error, and only fails when something tries to read it on
-# another machine.
+# The conflict resolution left this file as a bare `* text eol=lf`, which tells
+# git that EVERY file is text - including the trained models, the YOLO weights
+# and the dissertation itself. Git then rewrites their line endings on
+# checkout and CORRUPTS them, silently: no error on commit, no error on push,
+# and a .joblib that will not unpickle on the other machine.
 #
-# This was hit for real. Committing the tuned models produced:
-#
-#   warning: CRLF will be replaced by LF in
-#            dataset/processed/models/approach_pose_mlp_ft.joblib
-#   warning: CRLF will be replaced by LF in yolov8n.pt
-#
-# A .joblib with its line endings rewritten will not unpickle. The failure
-# would appear on the lab PC as an unreadable model, far from the cause.
-#
-# Marking them `binary` disables both conversion and diffing.
+# The binary rules below must come BEFORE the catch-all, and the catch-all
+# uses text=auto (let git detect) rather than text (force everything).
 # ============================================================================
 
 # Trained models and weights
@@ -25,7 +18,7 @@
 *.onnx     binary
 *.pkl      binary
 
-# Office documents (the dissertation, the overview deck)
+# Office documents - the dissertation and the overview deck
 *.docx     binary
 *.dotx     binary
 *.pptx     binary
@@ -42,6 +35,8 @@
 *.bag      binary
 *.db3      binary
 
-# Everything else: normalise to LF in the repository, which keeps the shell
-# scripts runnable on Linux regardless of the editor that wrote them.
-* text=auto eol=lf
+# Shell scripts must keep LF or bash fails on the shebang line.
+*.sh       text eol=lf
+
+# Everything else: let git detect, and normalise real text files to LF.
+*          text=auto eol=lf
