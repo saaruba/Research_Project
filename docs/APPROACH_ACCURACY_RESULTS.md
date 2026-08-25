@@ -22,12 +22,16 @@ within 0.5 m of a slot. Lower is better in both columns.
 
 | Detector | Policy | Position error (mean) | Position error (median) | Orientation error (mean) | Orientation error (median) |
 |---|---|---|---|---|---|
-| **YOLOv8n** | rule | 0.250 m | 0.261 m | **59.7°** | **58.1°** |
-| **YOLOv8n** | bc_ft (Random Forest) | 0.236 m | 0.241 m | 68.9° | 74.3° |
-| **YOLOv8n** | mlp_ft (MLP) | **0.158 m** | **0.085 m** | 73.2° | 79.5° |
-| **LocateAnything-3B** | rule | 0.479 m | 0.254 m | **47.8°** | **50.4°** |
-| **LocateAnything-3B** | bc_ft (Random Forest) | 0.348 m | 0.191 m | 60.5° | 71.0° |
-| **LocateAnything-3B** | mlp_ft (MLP) | **0.255 m** | 0.178 m | 75.1° | 76.1° |
+| **YOLOv8n** | rule | 0.250 m | 0.261 m | **64.6°** | **67.7°** |
+| **YOLOv8n** | bc_ft (Random Forest) | 0.236 m | 0.241 m | 74.7° | 81.7° |
+| **YOLOv8n** | mlp_ft (MLP) | **0.158 m** | **0.085 m** | 79.1° | 84.1° |
+| **LocateAnything-3B** | rule | 0.479 m | 0.254 m | **56.8°** | **58.3°** |
+| **LocateAnything-3B** | bc_ft (Random Forest) | 0.348 m | 0.191 m | 66.4° | 78.3° |
+| **LocateAnything-3B** | mlp_ft (MLP) | **0.255 m** | 0.178 m | 79.4° | 80.7° |
+
+Orientation is measured only while the robot is **stopped** (speed ≤ 0.10 m/s)
+and within 0.5 m of a slot, so these are the poses it actually held rather than
+headings snatched while driving past.
 
 ## Table 2 — Position accuracy, ranked
 
@@ -48,12 +52,12 @@ independent conditions, which is what makes it a result rather than noise.
 
 | Rank | Detector | Policy | Mean error | vs. rule baseline |
 |---|---|---|---|---|
-| 1 | LocateAnything-3B | rule | **47.8°** | — |
-| 2 | YOLOv8n | rule | 59.7° | — |
-| 3 | LocateAnything-3B | bc_ft | 60.5° | 27% worse |
-| 4 | YOLOv8n | bc_ft | 68.9° | 15% worse |
-| 5 | YOLOv8n | mlp_ft | 73.2° | 23% worse |
-| 6 | LocateAnything-3B | mlp_ft | 75.1° | 57% worse |
+| 1 | LocateAnything-3B | rule | **56.8°** | — |
+| 2 | YOLOv8n | rule | 64.6° | — |
+| 3 | LocateAnything-3B | bc_ft | 66.4° | 17% worse |
+| 4 | YOLOv8n | bc_ft | 74.7° | 16% worse |
+| 5 | YOLOv8n | mlp_ft | 79.1° | 22% worse |
+| 6 | LocateAnything-3B | mlp_ft | 79.4° | 40% worse |
 
 **The ranking inverts.** The rule baseline is the *best* on orientation under
 both detectors, and the MLP — the most accurate on position — is the *worst*.
@@ -93,7 +97,7 @@ degrade at all.
 inside the tolerance a human observer would accept and it beats a hand-coded
 geometric rule by 37%.
 
-**Orientation is not learned well.** All three policies leave the robot 48–75°
+**Orientation is not learned well.** All three policies leave the robot 57–79°
 away from facing the group. The rule performs best because its facing is
 hard-coded — it turns to the group centre by construction. The learned models
 predict `target_dyaw` from data, and orientation was always their weakest
@@ -123,6 +127,10 @@ recomputes from a single instantaneous centroid.
   detections. This is deliberate: it measures where the robot *should* have
   stood independently of whether its perception found the group, which is what
   makes the comparison fair across two detectors of very different quality.
-- **Orientation is measured while the robot is within 0.5 m of a slot**, which
-  includes time in transit. The figures are therefore an upper bound on how
-  well the robot faces the group, not a lower bound.
+- **Orientation is measured only at near-stationary samples** (speed
+  <= 0.10 m/s) within 0.5 m of a slot, so it reflects poses the robot held
+  rather than headings taken while driving past. Judging every sample instead
+  gives systematically better-looking figures (rule 59.7 deg, bc_ft 68.9 deg,
+  mlp_ft 73.2 deg) because a passing robot occasionally happens to point the
+  right way; those numbers are not reported, because they do not describe
+  standing beside a group.
