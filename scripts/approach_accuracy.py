@@ -1,0 +1,263 @@
+#!/usr/bin/env python3
+"""
+APPROACH-POINT ACCURACY  -  did the robot stand where it should have stood?
+
+    # see the ideal approach points for a world, and sanity-check them
+    python3 scripts/approach_accuracy.py --show-slots \
+        --groundtruth src/tiago_social_worlds/worlds/restaurant_testing.groundtruth.json
+
+    # score a batch of trials
+    python3 scripts/approach_accuracy.py \
+        --results dataset/processed/results_FINAL_20260824/yolo \
+        --groundtruth src/tiago_social_worlds/worlds/restaurant_testing.groundtruth.json
+
+============================================================================
+WHY THIS EXISTS
+============================================================================
+The existing task_success metric is a single per-trial boolean: did the robot
+ever hold a valid pose near ANY group. In the final batch it saturated - every
+policy scored 100% under YOLOv8n - so it cannot separate the policies. A metric
+at its ceiling measures nothing.
+
+This asks the sharper question the project is actually about: for each group in
+the room, how CLOSE did the robot get to a socially correct place to stand?
+
+That turns one boolean per trial into one distance per (trial, group), which is
+continuous, has no ceiling, and gives 3 groups x 10 trials = 30 observations
+per policy instead of 10.
+
+============================================================================
+HOW THE IDEAL APPROACH POINTS ARE DERIVED
+============================================================================
+They are computed from F-formation geometry, not hand-placed, so the same rule
+applies to every group and nothing is tuned to flatter a result.
+
+For each group of two or more people:
+
+  1. Take the bearing of every member as seen from the group centre.
+  2. Sort them and measure the angular GAP between neighbouring members.
+     These gaps are the openings in the formation - the P-space slots a person
+     would step into to join the conversation.
+  3. Keep every gap wider than --min-gap-deg. A narrow gap is two people
+     standing shoulder to shoulder, not a way in.
+  4. Place a slot on the bisector of each kept gap, at
+         radius = ospace_radius + --approach-offset
+     which is just outside the group's shared space.
+  5. The slot's heading faces the group centre.
+
+A four or five person group therefore yields three to five slots, matching the
+intuition that there are a handful of right places to stand and many wrong
+ones. Standing at ANY slot counts as correct - the robot is not required to
+guess a particular one.
+
+Sanity check on restaurant_testing group 3 (five people, centre 5.6,-1.8):
+the widest formation gap bisects at about +13 deg, putting a slot near
+(7.0, -2.0) - which is where a human reading the map would say to stand.
+
+============================================================================
+WHAT IS REPORTED
+============================================================================
+For each (trial, group) pair, the whole 10 Hz trajectory is searched for the
+sample that comes closest to any slot of that group:
+
+    slot_error_m     distance from that sample to the nearest slot
+    heading_error    how far off facing the group centre at that instant
+    reached          slot_error <= --tolerance AND heading within --heading-tol
+
+Lone individuals are skipped: a single person has no F-formation, no O-space
+opening, and therefore no approach slot.
+"""
+
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import math
+import os
+from collections import defaultdict
+
+
+def wrap(a: float) -> float:
+    return (a + math.pi) % (2 * math.pi) - math.pi
+
+
+def slots_for_group(group: dict, offset: float, min_gap_deg: float) -> list[dict]:
+    """Ideal standing positions in the openings of one F-formation."""
+    members = group.get("members", [])
+    if len(members) < 2:
+        return []
+
+    cx, cy = group["centre_x"], group["centre_y"]
+    radius = group.get("ospace_radius", 0.7) + offset
+
+    bearings = sorted(math.atan2(m["y"] - cy, m["x"] - cx) for m in members)
+
+    slots = []
+    n = len(bearings)
+    for i in range(n):
+        a = bearings[i]
+        b = bearings[(i + 1) % n]
+        gap = (b - a) % (2 * math.pi)          # always the positive sweep a->b
+        if math.degrees(gap) < min_gap_deg:
+            continue
+        mid = a + gap / 2.0
+        slots.append({
+            "x": cx + radius * math.cos(mid),
+            "y": cy + radius * math.sin(mid),
+            "bearing_deg": round(math.degrees(wrap(mid)), 1),
+            "gap_deg": round(math.degrees(gap), 1),
+        })
+    return slots
+
+
+def build_slots(gt_path: str, offset: float, min_gap_deg: float) -> dict:
+    gt = json.load(open(gt_path))
+    out = {}
+    for g in gt["groups"]:
+        if g.get("num_people", 1) < 2:
+            continue
+        s = slots_for_group(g, offset, min_gap_deg)
+        if s:
+            out[g["group_id"]] = {"group": g, "slots": s}
+    return out
+
+
+def score_trial(result: dict, groups: dict, tol: float, heading_tol: float) -> list[dict]:
+    traj = result.get("trajectory") or []
+    rows = []
+    for gid, entry in groups.items():
+        g, slots = entry["group"], entry["slots"]
+        cx, cy = g["centre_x"], g["centre_y"]
+
+        best = None
+        for s in traj:
+            for k, slot in enumerate(slots):
+                d = math.hypot(s["x"] - slot["x"], s["y"] - slot["y"])
+                if best is None or d < best[0]:
+                    desired = math.atan2(cy - s["y"], cx - s["x"])
+                    err = abs(wrap(desired - s["yaw"]))
+                    best = (d, math.degrees(err), k, s.get("t", 0.0))
+
+        if best is None:
+            continue
+        d, herr, k, t = best
+        rows.append({
+            "policy": result.get("policy", "?"),
+            "group_id": gid,
+            "num_people": g.get("num_people"),
+            "slot_error_m": round(d, 3),
+            "heading_error_deg": round(herr, 1),
+            "slot_index": k,
+            "t_s": round(t, 1),
+            "reached": bool(d <= tol and herr <= heading_tol),
+        })
+    return rows
+
+
+def main() -> None:
+    p = argparse.ArgumentParser()
+    p.add_argument("--results", help="directory of trial *.json files")
+    p.add_argument("--groundtruth", required=True)
+    p.add_argument("--approach-offset", type=float, default=0.6,
+                   help="metres beyond the O-space edge (default 0.6)")
+    p.add_argument("--min-gap-deg", type=float, default=45.0)
+    p.add_argument("--tolerance", type=float, default=0.5,
+                   help="metres from a slot that counts as reaching it")
+    p.add_argument("--heading-tol", type=float, default=45.0)
+    p.add_argument("--show-slots", action="store_true",
+                   help="print the computed approach points and exit")
+    p.add_argument("--csv", help="write per-(trial,group) rows here")
+    args = p.parse_args()
+
+    groups = build_slots(args.groundtruth, args.approach_offset, args.min_gap_deg)
+
+    if args.show_slots or not args.results:
+        print("=" * 72)
+        print(f"  IDEAL APPROACH POINTS   offset={args.approach_offset} m "
+              f"beyond O-space, min gap {args.min_gap_deg:.0f} deg")
+        print("=" * 72)
+        for gid, e in groups.items():
+            g = e["group"]
+            print(f"\n  Group {gid}: {g['num_people']} people at "
+                  f"({g['centre_x']:.2f}, {g['centre_y']:.2f}), "
+                  f"O-space r={g.get('ospace_radius'):.3f} m")
+            for i, s in enumerate(e["slots"]):
+                print(f"      slot {i}: ({s['x']:6.2f}, {s['y']:6.2f})   "
+                      f"bearing {s['bearing_deg']:>6.1f} deg   "
+                      f"gap {s['gap_deg']:>5.1f} deg")
+        print("\n" + "=" * 72)
+        if args.show_slots:
+            return
+
+    files = sorted(glob.glob(os.path.join(args.results, "*.json")))
+    if not files:
+        raise SystemExit(f"no trial JSONs in {args.results}")
+
+    all_rows = []
+    for f in files:
+        try:
+            r = json.load(open(f))
+        except Exception as exc:  # noqa: BLE001
+            print(f"  skipping {os.path.basename(f)}: {exc}")
+            continue
+        all_rows.extend(score_trial(r, groups, args.tolerance, args.heading_tol))
+
+    by_policy = defaultdict(list)
+    for r in all_rows:
+        by_policy[r["policy"]].append(r)
+
+    print("\n" + "=" * 78)
+    print(f"  APPROACH-POINT ACCURACY   {args.results}")
+    print(f"  {len(files)} trial(s), {len(groups)} conversational group(s), "
+          f"tolerance {args.tolerance} m / {args.heading_tol:.0f} deg")
+    print("=" * 78)
+
+    for policy in sorted(by_policy):
+        rows = by_policy[policy]
+        n = len(rows)
+        reached = sum(r["reached"] for r in rows)
+        errs = sorted(r["slot_error_m"] for r in rows)
+        mean = sum(errs) / n
+        median = errs[n // 2]
+        print(f"\n--- {policy}  ({n} group-visit(s)) "
+              + "-" * max(0, 40 - len(policy)))
+        print(f"  reached a valid slot : {reached}/{n}  ({100 * reached / n:.0f}%)")
+        print(f"  slot error, mean     : {mean:.3f} m")
+        print(f"  slot error, median   : {median:.3f} m")
+        print(f"  slot error, best     : {errs[0]:.3f} m")
+        print(f"  slot error, worst    : {errs[-1]:.3f} m")
+        per_group = defaultdict(list)
+        for r in rows:
+            per_group[r["group_id"]].append(r)
+        for gid in sorted(per_group):
+            g = per_group[gid]
+            gr = sum(x["reached"] for x in g)
+            gm = sum(x["slot_error_m"] for x in g) / len(g)
+            npeople = g[0]["num_people"]
+            print(f"      group {gid} ({npeople} people): "
+                  f"reached {gr}/{len(g)}, mean error {gm:.3f} m")
+
+    print("\n" + "=" * 78)
+    print(f"  {'policy':<12} {'reached':>12} {'mean err':>10} {'median err':>12}")
+    print("  " + "-" * 50)
+    for policy in sorted(by_policy):
+        rows = by_policy[policy]
+        n = len(rows)
+        reached = sum(r["reached"] for r in rows)
+        errs = sorted(r["slot_error_m"] for r in rows)
+        print(f"  {policy:<12} {reached:>4}/{n:<3} {100 * reached / n:>4.0f}% "
+              f"{sum(errs) / n:>9.3f}m {errs[n // 2]:>11.3f}m")
+    print("=" * 78)
+
+    if args.csv:
+        import csv
+        with open(args.csv, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(all_rows[0].keys()))
+            w.writeheader()
+            w.writerows(all_rows)
+        print(f"Written: {args.csv}")
+
+
+if __name__ == "__main__":
+    main()
