@@ -57,12 +57,19 @@ the widest formation gap bisects at about +13 deg, putting a slot near
 ============================================================================
 WHAT IS REPORTED
 ============================================================================
-For each (trial, group) pair, the whole 10 Hz trajectory is searched for the
-sample that comes closest to any slot of that group:
+For each (trial, group) pair the whole 10 Hz trajectory is searched for a
+sample that satisfies BOTH conditions at the same instant - not for the single
+closest sample, which is usually a tangential fly-past across the group's face.
 
-    slot_error_m     distance from that sample to the nearest slot
-    heading_error    how far off facing the group centre at that instant
-    reached          slot_error <= --tolerance AND heading within --heading-tol
+    nearest_slot_error_m  closest the robot ever came to a slot
+    within_distance       it was inside --tolerance of a slot at some point
+    heading_error_deg     best heading error among the in-tolerance samples
+    slot_error_m          distance at that best-heading sample
+    reached               within_distance AND heading within --heading-tol
+
+Reporting within_distance separately from reached matters: "got to the right
+place but never turned to face the group" and "never got to the right place"
+are different failures and should not be collapsed into one number.
 
 Lone individuals are skipped: a single person has no F-formation, no O-space
 opening, and therefore no approach slot.
@@ -130,27 +137,56 @@ def score_trial(result: dict, groups: dict, tol: float, heading_tol: float) -> l
         g, slots = entry["group"], entry["slots"]
         cx, cy = g["centre_x"], g["centre_y"]
 
-        best = None
+        # --------------------------------------------------------------------
+        # SEARCH FOR A SAMPLE THAT SATISFIES BOTH, NOT THE CLOSEST SAMPLE
+        #
+        # The first version of this took the single sample nearest to a slot
+        # and then tested its heading. That is the same mistake that was
+        # already fixed once in metrics_recorder_node.task_success: the nearest
+        # point on a path is very often a tangential fly-past, where the robot
+        # is at the right distance while travelling ACROSS the group's face.
+        # It scored 0/30 "reached" on a batch whose worst distance error was
+        # 0.446 m - i.e. every trial was inside the 0.5 m tolerance and every
+        # one was rejected on heading measured at the wrong instant.
+        #
+        # The question is whether the robot EVER stood in a slot facing the
+        # group. So: consider every sample already within tolerance, and take
+        # the best heading among them.
+        # --------------------------------------------------------------------
+        best_valid = None       # (heading_err, dist, slot_idx, t) with dist <= tol
+        nearest = None          # (dist, heading_err, slot_idx, t) fallback
+
         for s in traj:
+            desired = math.atan2(cy - s["y"], cx - s["x"])
+            herr = math.degrees(abs(wrap(desired - s["yaw"])))
             for k, slot in enumerate(slots):
                 d = math.hypot(s["x"] - slot["x"], s["y"] - slot["y"])
-                if best is None or d < best[0]:
-                    desired = math.atan2(cy - s["y"], cx - s["x"])
-                    err = abs(wrap(desired - s["yaw"]))
-                    best = (d, math.degrees(err), k, s.get("t", 0.0))
+                if nearest is None or d < nearest[0]:
+                    nearest = (d, herr, k, s.get("t", 0.0))
+                if d <= tol and (best_valid is None or herr < best_valid[0]):
+                    best_valid = (herr, d, k, s.get("t", 0.0))
 
-        if best is None:
+        if nearest is None:
             continue
-        d, herr, k, t = best
+
+        if best_valid is not None:
+            herr, d, k, t = best_valid
+            in_band = True
+        else:
+            d, herr, k, t = nearest
+            in_band = False
+
         rows.append({
             "policy": result.get("policy", "?"),
             "group_id": gid,
             "num_people": g.get("num_people"),
             "slot_error_m": round(d, 3),
+            "nearest_slot_error_m": round(nearest[0], 3),
             "heading_error_deg": round(herr, 1),
             "slot_index": k,
             "t_s": round(t, 1),
-            "reached": bool(d <= tol and herr <= heading_tol),
+            "within_distance": bool(in_band),
+            "reached": bool(in_band and herr <= heading_tol),
         })
     return rows
 
@@ -213,27 +249,34 @@ def main() -> None:
           f"tolerance {args.tolerance} m / {args.heading_tol:.0f} deg")
     print("=" * 78)
 
+    tol_note = f"{args.tolerance:g} m"
     for policy in sorted(by_policy):
         rows = by_policy[policy]
         n = len(rows)
         reached = sum(r["reached"] for r in rows)
-        errs = sorted(r["slot_error_m"] for r in rows)
+        in_band = sum(r["within_distance"] for r in rows)
+        errs = sorted(r["nearest_slot_error_m"] for r in rows)
+        head = sorted(r["heading_error_deg"] for r in rows if r["within_distance"])
         mean = sum(errs) / n
         median = errs[n // 2]
         print(f"\n--- {policy}  ({n} group-visit(s)) "
               + "-" * max(0, 40 - len(policy)))
-        print(f"  reached a valid slot : {reached}/{n}  ({100 * reached / n:.0f}%)")
-        print(f"  slot error, mean     : {mean:.3f} m")
-        print(f"  slot error, median   : {median:.3f} m")
-        print(f"  slot error, best     : {errs[0]:.3f} m")
-        print(f"  slot error, worst    : {errs[-1]:.3f} m")
+        print(f"  within {tol_note} of a slot   : {in_band}/{n}  ({100 * in_band / n:.0f}%)")
+        print(f"  ...AND facing the group : {reached}/{n}  ({100 * reached / n:.0f}%)")
+        if head:
+            print(f"  best heading in band    : mean {sum(head) / len(head):.1f} deg, "
+                  f"median {head[len(head) // 2]:.1f} deg")
+        print(f"  slot error, mean        : {mean:.3f} m")
+        print(f"  slot error, median      : {median:.3f} m")
+        print(f"  slot error, best        : {errs[0]:.3f} m")
+        print(f"  slot error, worst       : {errs[-1]:.3f} m")
         per_group = defaultdict(list)
         for r in rows:
             per_group[r["group_id"]].append(r)
         for gid in sorted(per_group):
             g = per_group[gid]
             gr = sum(x["reached"] for x in g)
-            gm = sum(x["slot_error_m"] for x in g) / len(g)
+            gm = sum(x["nearest_slot_error_m"] for x in g) / len(g)
             npeople = g[0]["num_people"]
             print(f"      group {gid} ({npeople} people): "
                   f"reached {gr}/{len(g)}, mean error {gm:.3f} m")
@@ -245,7 +288,7 @@ def main() -> None:
         rows = by_policy[policy]
         n = len(rows)
         reached = sum(r["reached"] for r in rows)
-        errs = sorted(r["slot_error_m"] for r in rows)
+        errs = sorted(r["nearest_slot_error_m"] for r in rows)
         print(f"  {policy:<12} {reached:>4}/{n:<3} {100 * reached / n:>4.0f}% "
               f"{sum(errs) / n:>9.3f}m {errs[n // 2]:>11.3f}m")
     print("=" * 78)
