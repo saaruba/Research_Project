@@ -34,9 +34,21 @@ import matplotlib
 matplotlib.use("Agg")                    # headless: no display in the container
 import matplotlib.pyplot as plt          # noqa: E402
 
-# Consistent identity for every figure. Blue/orange/grey stays distinguishable
-# in greyscale print and for the common forms of colour blindness.
-COLOURS = {"rule": "#7f7f7f", "bc_ft": "#1f77b4", "mlp_ft": "#ff7f0e"}
+# ---------------------------------------------------------------------------
+# COLOUR PALETTE  -  edit this and every figure follows
+#
+# PALETTE is the ordered list of colours; COLOURS assigns the first three to
+# the three policies. To recolour a policy, change the index it points at. To
+# add a fourth policy later, give it PALETTE[3].
+# ---------------------------------------------------------------------------
+PALETTE = [
+    "#000000",   # 0  black
+    "#FF8C00",   # 1  orange
+    "#5B4FCF",   # 2  purple-blue
+    "#D62728",   # 3  red
+    "#FFC000",   # 4  yellow
+]
+COLOURS = {"rule": PALETTE[0], "bc_ft": PALETTE[1], "mlp_ft": PALETTE[2]}
 LABELS = {"rule": "Rule baseline", "bc_ft": "BC – Random Forest",
           "mlp_ft": "BC – MLP"}
 DETECTORS = [("yolo", "YOLOv8n (2 Hz)"), ("locateanything", "LocateAnything-3B (0.5 Hz)")]
@@ -93,8 +105,9 @@ def _bar_chart(data, field, only_in_band, title, ylabel, fname, out, fmt="{:.3f}
                       color=[COLOURS[p] for p in ORDER],
                       alpha=1.0 if di == 0 else 0.55,
                       edgecolor="black", linewidth=0.6)
-        for b, m in zip(bars, means):
-            ax.text(b.get_x() + b.get_width() / 2, b.get_height() + max(means) * 0.02,
+        for b, m, e in zip(bars, means, errs):
+            ax.text(b.get_x() + b.get_width() / 2,
+                    b.get_height() + e + max(means) * 0.03,
                     fmt.format(m), ha="center", va="bottom", fontsize=9)
 
     ax.set_xticks(list(xs))
@@ -150,7 +163,7 @@ def fig3_distribution(data, out: Path) -> None:
 
 def fig4_tradeoff(data, out: Path) -> None:
     """The headline: accurate placement and accurate facing pull apart."""
-    fig, ax = plt.subplots(figsize=(8.5, 6.0))
+    fig, ax = plt.subplots(figsize=(9.0, 6.5))
     for di, (key, dlabel) in enumerate(DETECTORS):
         if key not in data:
             continue
@@ -162,8 +175,8 @@ def fig4_tradeoff(data, out: Path) -> None:
             head = [r["heading_error_deg"] for r in rows if r["within_distance"]]
             if not head:
                 continue
-            ax.scatter(pos, statistics.fmean(head), s=190,
-                       color=COLOURS[policy], edgecolor="black", linewidth=1.0,
+            ax.scatter(pos, statistics.fmean(head), s=190, color=COLOURS[policy],
+                       edgecolor="black", linewidth=1.0,
                        marker="o" if di == 0 else "^", zorder=3)
             ax.annotate(f"{LABELS[policy]}\n{dlabel.split(' ')[0]}",
                         (pos, statistics.fmean(head)),
@@ -178,6 +191,7 @@ def fig4_tradeoff(data, out: Path) -> None:
     ax.set_axisbelow(True)
     ax.text(0.02, 0.03, "best corner", transform=ax.transAxes, fontsize=9,
             style="italic", color="#2ca02c")
+    ax.margins(x=0.24, y=0.26)
 
     # Every point is annotated, so a six-entry legend would only repeat the
     # labels AND sit on top of the data. The legend explains the encoding -
@@ -194,9 +208,6 @@ def fig4_tradeoff(data, out: Path) -> None:
                        label=LABELS[p]) for p in ORDER]
     ax.legend(handles=handles, fontsize=8, loc="lower right", frameon=True,
               ncol=2, framealpha=0.95)
-
-    # Headroom so the right-hand annotations are not clipped.
-    ax.margins(x=0.24, y=0.26)
     _save(fig, out, "fig4_tradeoff")
 
 

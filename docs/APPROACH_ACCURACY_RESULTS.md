@@ -35,18 +35,25 @@ headings snatched while driving past.
 
 ## Table 2 — Position accuracy, ranked
 
-| Rank | Detector | Policy | Mean error | vs. rule baseline |
-|---|---|---|---|---|
-| 1 | YOLOv8n | mlp_ft | **0.158 m** | **37% better** |
-| 2 | YOLOv8n | bc_ft | 0.236 m | 6% better |
-| 3 | YOLOv8n | rule | 0.250 m | — |
-| 4 | LocateAnything-3B | mlp_ft | 0.255 m | **47% better** |
-| 5 | LocateAnything-3B | bc_ft | 0.348 m | 27% better |
-| 6 | LocateAnything-3B | rule | 0.479 m | — |
+| Detector | Policy | Mean | vs. rule (mean) | Median | vs. rule (median) |
+|---|---|---|---|---|---|
+| YOLOv8n | **mlp_ft** | **0.158 m** | 37% better | **0.085 m** | **67% better** |
+| YOLOv8n | bc_ft | 0.236 m | 6% better | 0.241 m | 8% better |
+| YOLOv8n | rule | 0.250 m | — | 0.261 m | — |
+| LocateAnything-3B | **mlp_ft** | **0.255 m** | 47% better | **0.178 m** | **30% better** |
+| LocateAnything-3B | bc_ft | 0.348 m | 27% better | 0.191 m | 25% better |
+| LocateAnything-3B | rule | 0.479 m | — | 0.254 m | — |
 
 **Both learned policies beat the rule baseline on positional accuracy, under
-both detectors.** The ordering mlp_ft < bc_ft < rule is identical in the two
-independent conditions, which is what makes it a result rather than noise.
+both detectors, on both statistics.** The ordering mlp_ft < bc_ft < rule is
+identical in the two independent conditions and survives the switch from mean
+to median, which is what makes it a result rather than an artefact of a few
+unlucky trials.
+
+Note that the MLP's advantage is *larger* on the medians under YOLOv8n (67%
+better than the rule, versus 37% on the means): its typical trial is far more
+accurate than its average, because the average is pulled up by a small number
+of poor ones. Quoting the median is both more favourable and more honest here.
 
 ## Table 3 — Orientation accuracy, ranked
 
@@ -76,17 +83,42 @@ openings.
 
 ## Table 5 — Effect of the detector on position accuracy
 
-| Policy | YOLOv8n (2 Hz) | LocateAnything-3B (0.5 Hz) | Degradation |
-|---|---|---|---|
-| mlp_ft | 0.158 m | 0.255 m | **+61%** |
-| bc_ft | 0.236 m | 0.348 m | **+47%** |
-| rule | 0.250 m | 0.479 m | **+92%** |
+**Read this table on the medians, not the means.** The LocateAnything position
+errors are strongly right-skewed, and the means describe the tail rather than
+the typical trial.
 
-Every policy is less accurate when the perception rate drops. The rule
-baseline degrades roughly twice as much as the learned policies — consistent
-with the cut-through result, where the rule went from 0/10 to 6/10 trials
-walking between group members (p = 0.011) while the learned policies did not
-degrade at all.
+| Policy | YOLO mean | LA mean | *apparent* change | YOLO median | LA median | **real change** |
+|---|---|---|---|---|---|---|
+| mlp_ft | 0.158 m | 0.255 m | +61% | 0.085 m | 0.178 m | +109% |
+| bc_ft | 0.236 m | 0.348 m | +47% | 0.241 m | 0.191 m | **−21%** |
+| rule | 0.250 m | 0.479 m | +92% | 0.261 m | 0.254 m | **−3%** |
+
+On the means it looks as though every policy degrades badly at the lower
+perception rate. On the medians two of the three actually *improve* slightly.
+The means are inflated by a small number of large failures: the rule has trials
+at 3.53 m, 2.41 m and 0.85 m; the Random Forest at 2.33 m and 2.07 m; the MLP
+at 2.20 m. Figure 3 shows these directly as outlier points, and Figure 1 shows
+the same thing as the gap between each bar top and its median diamond.
+
+**The correct statement is therefore not that LocateAnything-3B degrades
+approach accuracy.** It is:
+
+> At 0.5 Hz, LocateAnything-3B achieves comparable *typical* approach accuracy
+> to YOLOv8n at 2 Hz — the median trial is as good, and for two policies
+> slightly better. What the lower perception rate introduces is **occasional
+> catastrophic failure**: trials in which the robot ends up 2–3.5 m from any
+> valid approach point, which never occurs under YOLOv8n.
+
+That is consistent with the mechanism. Most of the time a detection every two
+seconds is sufficient; occasionally the robot misses a group entirely or acts
+on a stale observation, and that trial fails badly rather than mildly. It is
+also consistent with the cut-through result, where the rule baseline went from
+0/10 to 6/10 trials walking between group members (p = 0.011) while the learned
+policies did not degrade at all.
+
+**For a deployed system this distinction matters.** A detector with a slightly
+worse average but no catastrophic failures is preferable to one with a good
+average and a 10% chance of ending up three metres from where it should be.
 
 ---
 
@@ -111,11 +143,14 @@ reliably as simply pointing at the group. A practical system should therefore
 use the learned model for position and a geometric constraint for final
 orientation — a hybrid the results directly motivate.
 
-**Robustness follows the same pattern.** When perception degrades from 2 Hz to
-0.5 Hz, the rule loses 92% of its positional accuracy and starts cutting
-through conversations; the learned policies lose 47–61% and do not. Policies
-that infer from a broader feature set degrade more gracefully than one that
-recomputes from a single instantaneous centroid.
+**Robustness is about failure modes, not averages.** When perception drops from
+2 Hz to 0.5 Hz, median accuracy is largely unaffected for every policy (Table
+5), but the *character* of the failures changes: the rule baseline begins
+cutting through conversations in 6 of 10 trials (p = 0.011, versus 0 of 10 at
+2 Hz) while the learned policies do not, and all three occasionally produce a
+trial 2–3.5 m off target. Policies that infer from a broader feature set
+degrade more gracefully than one that recomputes from a single instantaneous
+centroid — but no policy is immune to a missed detection.
 
 ## Limitations to state alongside these numbers
 
