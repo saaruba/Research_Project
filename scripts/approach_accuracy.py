@@ -130,8 +130,21 @@ def build_slots(gt_path: str, offset: float, min_gap_deg: float) -> dict:
     return out
 
 
-def score_trial(result: dict, groups: dict, tol: float, heading_tol: float) -> list[dict]:
+def annotate_speed(traj: list[dict]) -> None:
+    """Attach a speed estimate to every trajectory sample, in place."""
+    for i, s in enumerate(traj):
+        if i == 0:
+            s["_v"] = 0.0
+            continue
+        p = traj[i - 1]
+        dt = s.get("t", 0.0) - p.get("t", 0.0)
+        s["_v"] = math.hypot(s["x"] - p["x"], s["y"] - p["y"]) / dt if dt > 1e-6 else 0.0
+
+
+def score_trial(result: dict, groups: dict, tol: float, heading_tol: float,
+                stationary_speed: float = 0.10) -> list[dict]:
     traj = result.get("trajectory") or []
+    annotate_speed(traj)
     rows = []
     for gid, entry in groups.items():
         g, slots = entry["group"], entry["slots"]
@@ -153,18 +166,40 @@ def score_trial(result: dict, groups: dict, tol: float, heading_tol: float) -> l
         # group. So: consider every sample already within tolerance, and take
         # the best heading among them.
         # --------------------------------------------------------------------
-        best_valid = None       # (heading_err, dist, slot_idx, t) with dist <= tol
-        nearest = None          # (dist, heading_err, slot_idx, t) fallback
+        # ONLY SAMPLES WHERE THE ROBOT HAS STOPPED COUNT  (added Aug 2026)
+        #
+        # The previous version searched every sample. That produced a striking
+        # and misleading pattern: 100% of group-visits came within 0.5 m of a
+        # slot, but the best heading while there was 48-75 deg off, identically
+        # across all six policy/detector conditions. A result that uniform is
+        # not behaviour, it is a measurement artefact.
+        #
+        # The cause is that the slots (ospace_radius + 0.6 m from the centre)
+        # and the policy's own target (1.35 m from the nearest PERSON) are not
+        # the same place. The robot therefore clips the slot region while
+        # DRIVING PAST toward its own goal, and gets scored mid-transit, facing
+        # its direction of travel rather than the group.
+        #
+        # The question is where the robot stood when it stopped to engage the
+        # group, so only near-stationary samples are eligible. Movement between
+        # samples gives the speed; anything above --stationary-speed is the
+        # robot in transit and is excluded from the heading judgement.
+        best_valid = None       # (heading_err, dist, slot_idx, t), stationary & in tol
+        nearest = None          # (dist, heading_err, slot_idx, t) over ALL samples
+        n_stationary_in_band = 0
 
         for s in traj:
             desired = math.atan2(cy - s["y"], cx - s["x"])
             herr = math.degrees(abs(wrap(desired - s["yaw"])))
+            parked = s.get("_v", 0.0) <= stationary_speed
             for k, slot in enumerate(slots):
                 d = math.hypot(s["x"] - slot["x"], s["y"] - slot["y"])
                 if nearest is None or d < nearest[0]:
                     nearest = (d, herr, k, s.get("t", 0.0))
-                if d <= tol and (best_valid is None or herr < best_valid[0]):
-                    best_valid = (herr, d, k, s.get("t", 0.0))
+                if d <= tol and parked:
+                    n_stationary_in_band += 1
+                    if best_valid is None or herr < best_valid[0]:
+                        best_valid = (herr, d, k, s.get("t", 0.0))
 
         if nearest is None:
             continue
@@ -186,6 +221,8 @@ def score_trial(result: dict, groups: dict, tol: float, heading_tol: float) -> l
             "slot_index": k,
             "t_s": round(t, 1),
             "within_distance": bool(in_band),
+            "stationary_samples_in_band": n_stationary_in_band,
+            "dwell_seconds_in_band": round(n_stationary_in_band * 0.1, 1),
             "reached": bool(in_band and herr <= heading_tol),
         })
     return rows
@@ -201,6 +238,10 @@ def main() -> None:
     p.add_argument("--tolerance", type=float, default=0.5,
                    help="metres from a slot that counts as reaching it")
     p.add_argument("--heading-tol", type=float, default=45.0)
+    p.add_argument("--stationary-speed", type=float, default=0.10,
+                   help="m/s below which the robot counts as stopped. Only "
+                        "stationary samples are judged on heading, because a "
+                        "robot driving past a slot is not standing in it.")
     p.add_argument("--show-slots", action="store_true",
                    help="print the computed approach points and exit")
     p.add_argument("--csv", help="write per-(trial,group) rows here")
@@ -237,7 +278,8 @@ def main() -> None:
         except Exception as exc:  # noqa: BLE001
             print(f"  skipping {os.path.basename(f)}: {exc}")
             continue
-        all_rows.extend(score_trial(r, groups, args.tolerance, args.heading_tol))
+        all_rows.extend(score_trial(r, groups, args.tolerance, args.heading_tol,
+                                    args.stationary_speed))
 
     by_policy = defaultdict(list)
     for r in all_rows:
@@ -261,7 +303,9 @@ def main() -> None:
         median = errs[n // 2]
         print(f"\n--- {policy}  ({n} group-visit(s)) "
               + "-" * max(0, 40 - len(policy)))
-        print(f"  within {tol_note} of a slot   : {in_band}/{n}  ({100 * in_band / n:.0f}%)")
+        dwelled = sum(1 for r in rows if r["stationary_samples_in_band"] > 0)
+        print(f"  came within {tol_note} of a slot : {sum(r['nearest_slot_error_m'] <= args.tolerance for r in rows)}/{n}")
+        print(f"  STOPPED within {tol_note}        : {dwelled}/{n}  ({100 * dwelled / n:.0f}%)")
         print(f"  ...AND facing the group : {reached}/{n}  ({100 * reached / n:.0f}%)")
         if head:
             print(f"  best heading in band    : mean {sum(head) / len(head):.1f} deg, "

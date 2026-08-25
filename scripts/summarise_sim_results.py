@@ -54,6 +54,108 @@ def load_runs(results_dir: Path) -> list[dict]:
     return runs
 
 
+# ---------------------------------------------------------------------------
+# APPROACH-POINT ACCURACY  (added Aug 2026)
+#
+# The binary metrics above saturated in the final batch - every policy scored
+# 100% task success under YOLOv8n - so they cannot separate the policies. This
+# section adds the two numbers the project is really about: how close, in
+# metres, did the robot get to a socially correct place to stand, and how far,
+# in degrees, was it from facing the group when it got there.
+#
+# The slot geometry and scoring live in approach_accuracy.py so there is one
+# implementation, not two that can drift apart.
+# ---------------------------------------------------------------------------
+def _load_approach_module():
+    import importlib.util
+    path = Path(__file__).resolve().parent / "approach_accuracy.py"
+    if not path.exists():
+        return None
+    spec = importlib.util.spec_from_file_location("approach_accuracy", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def approach_accuracy_section(runs: list[dict], args) -> list[dict]:
+    """Print position and orientation accuracy per policy. Returns the rows."""
+    gt = Path(args.groundtruth).expanduser()
+    if not gt.exists():
+        print(f"\n(no ground truth at {gt} - skipping approach accuracy)")
+        print("  pass --groundtruth <world>.groundtruth.json to enable it")
+        return []
+
+    aa = _load_approach_module()
+    if aa is None:
+        print("\n(scripts/approach_accuracy.py not found - skipping approach accuracy)")
+        return []
+
+    groups = aa.build_slots(str(gt), args.approach_offset, args.min_gap_deg)
+    if not groups:
+        print("\n(no conversational groups in the ground truth - "
+              "approach accuracy needs groups of 2+)")
+        return []
+
+    rows = []
+    for r in runs:
+        rows.extend(aa.score_trial(r, groups, args.tolerance,
+                                   args.heading_tol, args.stationary_speed))
+    if not rows:
+        return []
+
+    by_policy = defaultdict(list)
+    for r in rows:
+        by_policy[r["policy"]].append(r)
+
+    n_slots = sum(len(e["slots"]) for e in groups.values())
+    print()
+    print("=" * 78)
+    print("APPROACH-POINT ACCURACY - position and orientation")
+    print("=" * 78)
+    print(f"{len(groups)} conversational group(s), {n_slots} ideal standing slot(s)")
+    print(f"slots sit {args.approach_offset:g} m outside the O-space, on the bisector")
+    print(f"of every formation gap wider than {args.min_gap_deg:g} deg")
+    print()
+    print(f"{'policy':<10}{'POSITION err (m)':>22}{'ORIENTATION err (deg)':>26}")
+    print(f"{'':<10}{'mean':>11}{'median':>11}{'mean':>13}{'median':>13}")
+    print("-" * 78)
+
+    for policy in sorted(by_policy):
+        pr = by_policy[policy]
+        pos = sorted(r["nearest_slot_error_m"] for r in pr)
+        head = sorted(r["heading_error_deg"] for r in pr if r["within_distance"])
+        pm = statistics.fmean(pos)
+        pmed = pos[len(pos) // 2]
+        if head:
+            hm, hmed = statistics.fmean(head), head[len(head) // 2]
+            print(f"{policy:<10}{pm:>11.3f}{pmed:>11.3f}{hm:>13.1f}{hmed:>13.1f}")
+        else:
+            print(f"{policy:<10}{pm:>11.3f}{pmed:>11.3f}{'n/a':>13}{'n/a':>13}")
+
+    print()
+    print("  (lower is better in every column)")
+    print(f"  {len(rows)} group-visit(s) scored, "
+          f"{len(rows) // max(1, len(by_policy))} per policy")
+
+    print()
+    print("Per group, mean position error (m):")
+    gids = sorted({r["group_id"] for r in rows})
+    header = "  " + f"{'policy':<10}" + "".join(
+        f"{'grp ' + str(g):>12}" for g in gids)
+    print(header)
+    for policy in sorted(by_policy):
+        line = f"  {policy:<10}"
+        for g in gids:
+            vals = [r["nearest_slot_error_m"] for r in by_policy[policy]
+                    if r["group_id"] == g]
+            line += f"{statistics.fmean(vals):>12.3f}" if vals else f"{'n/a':>12}"
+        print(line)
+
+    sizes = {g: groups[g]["group"].get("num_people") for g in gids}
+    print("  " + " " * 10 + "".join(f"{'(' + str(sizes[g]) + 'p)':>12}" for g in gids))
+    return rows
+
+
 def mean_or_none(values: list) -> float | None:
     clean = [v for v in values if v is not None]
     return statistics.fmean(clean) if clean else None
@@ -93,6 +195,24 @@ def summarise(policy: str, runs: list[dict]) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS)
+    # --- approach-point accuracy (added Aug 2026) ---------------------------
+    parser.add_argument(
+        "--groundtruth", default=str(
+            PROJECT_ROOT / "src" / "tiago_social_worlds" / "worlds"
+            / "restaurant_testing.groundtruth.json"),
+        help="world ground truth; supplies the person positions the ideal "
+             "approach slots are derived from")
+    parser.add_argument("--approach-offset", type=float, default=0.6,
+                        help="metres outside the O-space to place a slot")
+    parser.add_argument("--min-gap-deg", type=float, default=45.0,
+                        help="narrowest formation gap that counts as an opening")
+    parser.add_argument("--tolerance", type=float, default=0.5,
+                        help="metres from a slot that counts as being there")
+    parser.add_argument("--heading-tol", type=float, default=45.0)
+    parser.add_argument("--stationary-speed", type=float, default=0.10,
+                        help="m/s below which the robot counts as stopped")
+    parser.add_argument("--no-approach-accuracy", action="store_true",
+                        help="skip the position/orientation accuracy section")
     args = parser.parse_args()
 
     results_dir = args.results_dir.expanduser().resolve()
@@ -166,6 +286,19 @@ def main() -> None:
         print("\nNote: with a small number of runs these rates carry wide")
         print("uncertainty. Report the run counts alongside them, and avoid")
         print("claiming a difference that rests on one or two trials.")
+
+    # --- position and orientation accuracy ----------------------------------
+    approach_rows = []
+    if not args.no_approach_accuracy:
+        approach_rows = approach_accuracy_section(runs, args)
+    if approach_rows:
+        import csv as _csv
+        aa_path = results_dir / "approach_accuracy.csv"
+        with aa_path.open("w", newline="", encoding="utf-8") as handle:
+            w = _csv.DictWriter(handle, fieldnames=list(approach_rows[0]))
+            w.writeheader()
+            w.writerows(approach_rows)
+        print(f"\nWritten: {aa_path}")
 
     csv_path = results_dir / "summary.csv"
     if summaries:
