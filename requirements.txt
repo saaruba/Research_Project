@@ -78,6 +78,16 @@ joblib==1.5.3
 scipy==1.15.3
 
 
+# --- matplotlib: only for the Chapter 5 figures ------------------------------
+# Used by scripts/plot_results.py to draw the approach-accuracy figures. It is
+# NOT needed to run the simulation, train the models or produce the numeric
+# results - only to render them.
+#
+# It does not depend on scipy, so installing it cannot re-trigger the numpy /
+# scipy ABI clash documented above.
+matplotlib==3.10.9
+
+
 # --- Video / image processing -----------------------------------------------
 # Reading session .mp4 files, drawing detection overlays, exporting frames.
 #   extract_person_detections.py, prepare_ospace_validation.py,

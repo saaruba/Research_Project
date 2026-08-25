@@ -384,59 +384,12 @@ class MetricsRecorderNode(Node):
                       f"({cx:.1f}, {cy:.1f}): {distance:.2f} m, heading "
                       f"{math.degrees(error):.0f} deg off, at t={t:.0f}s")
 
-        cx, cy = self.goal_centroid
-
-        # ------------------------------------------------------------------
-        # Scored at CLOSEST APPROACH, not at the final pose.
-        #
-        # The robot now runs a patrol mission and RETURNS TO ITS START POINT,
-        # so its final pose is never beside the group - by design. Scoring the
-        # last sample marked every run a failure no matter how well the policy
-        # behaved: one run reached 1.101 m from the person, textbook social
-        # distance, and was recorded as "failed" purely because it then drove
-        # home.
-        #
-        # What the objective actually asks is whether the robot ever achieved a
-        # socially appropriate approach pose. So: find the sample where it came
-        # closest to the group, and judge distance AND heading at that instant.
-        # ------------------------------------------------------------------
-        # Success = the robot achieved, at ANY point, a pose that satisfies
-        # distance AND heading together.
-        #
-        # Scoring the single closest sample was wrong too: the nearest point on
-        # the path is often a tangential fly-past, where the robot is at the
-        # right distance but travelling across the group's face. That scored
-        # 88-90 deg heading error and "failed" three runs in which the robot
-        # had in fact settled at 1.50 m facing the group within 1 degree.
-        #
-        # Both conditions must hold in the SAME sample, so this cannot be
-        # gamed by being at the right distance at one moment and the right
-        # heading at another.
-        nearest = min(math.dist((s['x'], s['y']), (cx, cy)) for s in self.samples)
-
-        best = None
-        for s in self.samples:
-            distance = math.dist((s['x'], s['y']), (cx, cy))
-            if not (lo <= distance <= hi):
-                continue
-            desired_yaw = math.atan2(cy - s['y'], cx - s['x'])
-            error = abs(math.atan2(math.sin(desired_yaw - s['yaw']),
-                                   math.cos(desired_yaw - s['yaw'])))
-            if best is None or error < best[0]:
-                best = (error, distance, s['t'])
-
-        if best is None:
-            return False, (f"never held a pose in the [{lo}, {hi}] m band "
-                           f"(closest was {nearest:.2f} m)")
-
-        error, distance, t = best
-        if math.degrees(error) > 45.0:
-            return False, (f"was in the social band but never faced the group: "
-                           f"best heading error {math.degrees(error):.0f} deg "
-                           f"at {distance:.2f} m")
-
-        return True, (f"reached a valid approach pose: {distance:.2f} m, "
-                      f"heading {math.degrees(error):.0f} deg off, at t={t:.0f}s")
+        # NOTE: an earlier draft of this method continued past this point
+        # with a second scoring implementation that scored against
+        # self.goal_centroid (the last PERCEIVED group) rather than the
+        # ground truth. It was left in place when the ground-truth version
+        # above was written, and was therefore unreachable dead code -
+        # 53 lines of a scoring rule that never ran. Removed Aug 2026.
 
     def finish(self) -> None:
         if self.finished:
