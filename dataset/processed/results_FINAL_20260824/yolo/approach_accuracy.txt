@@ -1,0 +1,50 @@
+
+==============================================================================
+  APPROACH-POINT ACCURACY   dataset/processed/results_FINAL_20260824/yolo
+  30 trial(s), 3 conversational group(s), tolerance 0.5 m / 45 deg
+==============================================================================
+
+--- bc_ft  (30 group-visit(s)) -----------------------------------
+  within 0.5 m of a slot   : 30/30  (100%)
+  ...AND facing the group : 2/30  (7%)
+  best heading in band    : mean 68.9 deg, median 74.3 deg
+  slot error, mean        : 0.236 m
+  slot error, median      : 0.241 m
+  slot error, best        : 0.010 m
+  slot error, worst       : 0.446 m
+      group 3 (4 people): reached 0/10, mean error 0.322 m
+      group 4 (3 people): reached 2/10, mean error 0.201 m
+      group 5 (5 people): reached 0/10, mean error 0.184 m
+
+--- mlp_ft  (30 group-visit(s)) ----------------------------------
+  within 0.5 m of a slot   : 30/30  (100%)
+  ...AND facing the group : 1/30  (3%)
+  best heading in band    : mean 73.2 deg, median 79.5 deg
+  slot error, mean        : 0.158 m
+  slot error, median      : 0.085 m
+  slot error, best        : 0.005 m
+  slot error, worst       : 0.437 m
+      group 3 (4 people): reached 0/10, mean error 0.061 m
+      group 4 (3 people): reached 0/10, mean error 0.159 m
+      group 5 (5 people): reached 1/10, mean error 0.255 m
+
+--- rule  (30 group-visit(s)) ------------------------------------
+  within 0.5 m of a slot   : 29/30  (97%)
+  ...AND facing the group : 6/30  (20%)
+  best heading in band    : mean 59.7 deg, median 58.1 deg
+  slot error, mean        : 0.250 m
+  slot error, median      : 0.261 m
+  slot error, best        : 0.007 m
+  slot error, worst       : 0.505 m
+      group 3 (4 people): reached 3/10, mean error 0.230 m
+      group 4 (3 people): reached 2/10, mean error 0.242 m
+      group 5 (5 people): reached 1/10, mean error 0.277 m
+
+==============================================================================
+  policy            reached   mean err   median err
+  --------------------------------------------------
+  bc_ft           2/30     7%     0.236m       0.241m
+  mlp_ft          1/30     3%     0.158m       0.085m
+  rule            6/30    20%     0.250m       0.261m
+==============================================================================
+Written: dataset/processed/results_FINAL_20260824/yolo/approach_accuracy.csv

@@ -1,0 +1,51 @@
+Ground truth: restaurant_testing.groundtruth.json
+  6 target(s); scoring against the 3 with >= 2 people
+   ( -6.00,  -5.00)  1 people (excluded)
+   ( -6.00,  -7.00)  1 people (excluded)
+   (  4.00,   2.00)  1 people (excluded)
+   ( -3.50,  -2.50)  4 people 
+   (  4.67,   2.67)  3 people 
+   (  5.60,  -1.80)  5 people 
+
+30 trial file(s)
+
+run                              old   new  reason
+----------------------------------------------------------------------------------------------------
+bc_ft_20260824_233715          False  True  valid approach pose at the group near (4.7, 2.7): 1.98 m, he   <-- CHANGED
+bc_ft_20260824_234338           True  True  valid approach pose at the group near (4.7, 2.7): 1.00 m, he
+bc_ft_20260824_234950          False  True  valid approach pose at the group near (4.7, 2.7): 0.71 m, he   <-- CHANGED
+bc_ft_20260824_235725           True  True  valid approach pose at the group near (4.7, 2.7): 1.98 m, he
+bc_ft_20260825_000347           True  True  valid approach pose at the group near (4.7, 2.7): 1.12 m, he
+bc_ft_20260825_000958           True  True  valid approach pose at the group near (4.7, 2.7): 1.98 m, he
+bc_ft_20260825_001543           True  True  valid approach pose at the group near (4.7, 2.7): 1.43 m, he
+bc_ft_20260825_002307           True  True  valid approach pose at the group near (4.7, 2.7): 1.94 m, he
+bc_ft_20260825_002916           True  True  valid approach pose at the group near (5.6, -1.8): 1.65 m, h
+bc_ft_20260825_003430           True  True  valid approach pose at the group near (4.7, 2.7): 1.77 m, he
+mlp_ft_20260825_004130          True  True  valid approach pose at the group near (4.7, 2.7): 1.97 m, he
+mlp_ft_20260825_004918          True  True  valid approach pose at the group near (4.7, 2.7): 2.00 m, he
+mlp_ft_20260825_005633          True  True  valid approach pose at the group near (-3.5, -2.5): 1.97 m, 
+mlp_ft_20260825_010350         False False  in the band at the group near (5.6, -1.8) but never faced it
+mlp_ft_20260825_011123          True  True  valid approach pose at the group near (4.7, 2.7): 2.00 m, he
+mlp_ft_20260825_011825          True  True  valid approach pose at the group near (-3.5, -2.5): 1.98 m, 
+mlp_ft_20260825_012507          True  True  valid approach pose at the group near (4.7, 2.7): 1.99 m, he
+mlp_ft_20260825_013051          True  True  valid approach pose at the group near (5.6, -1.8): 1.96 m, h
+mlp_ft_20260825_013731          True  True  valid approach pose at the group near (-3.5, -2.5): 1.99 m, 
+mlp_ft_20260825_014534          True  True  valid approach pose at the group near (4.7, 2.7): 1.98 m, he
+rule_20260824_223823            True  True  valid approach pose at the group near (4.7, 2.7): 0.99 m, he
+rule_20260824_224403           False  True  valid approach pose at the group near (-3.5, -2.5): 1.97 m,    <-- CHANGED
+rule_20260824_224947            True  True  valid approach pose at the group near (4.7, 2.7): 0.95 m, he
+rule_20260824_225625            True  True  valid approach pose at the group near (-3.5, -2.5): 1.11 m, 
+rule_20260824_230307            True  True  valid approach pose at the group near (-3.5, -2.5): 0.91 m, 
+rule_20260824_230808            True  True  valid approach pose at the group near (4.7, 2.7): 1.78 m, he
+rule_20260824_231109           False False  never held a pose in the [0.5, 2.0] m band around any real g
+rule_20260824_232000            True  True  valid approach pose at the group near (5.6, -1.8): 0.50 m, h
+rule_20260824_232522            True  True  valid approach pose at the group near (-3.5, -2.5): 1.99 m, 
+rule_20260824_233046            True  True  valid approach pose at the group near (5.6, -1.8): 1.42 m, h
+
+============================================================
+3 verdict(s) changed
+  bc_ft  success 10/10  (100%)
+  mlp_ft success 9/10  (90%)
+  rule   success 9/10  (90%)
+
+Files updated. Re-run scripts/summarise_sim_results.py.

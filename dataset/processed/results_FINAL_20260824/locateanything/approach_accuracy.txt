@@ -1,0 +1,50 @@
+
+==============================================================================
+  APPROACH-POINT ACCURACY   dataset/processed/results_FINAL_20260824/locateanything
+  30 trial(s), 3 conversational group(s), tolerance 0.5 m / 45 deg
+==============================================================================
+
+--- bc_ft  (30 group-visit(s)) -----------------------------------
+  within 0.5 m of a slot   : 27/30  (90%)
+  ...AND facing the group : 7/30  (23%)
+  best heading in band    : mean 60.5 deg, median 71.0 deg
+  slot error, mean        : 0.348 m
+  slot error, median      : 0.191 m
+  slot error, best        : 0.005 m
+  slot error, worst       : 2.329 m
+      group 3 (4 people): reached 0/10, mean error 0.426 m
+      group 4 (3 people): reached 3/10, mean error 0.217 m
+      group 5 (5 people): reached 4/10, mean error 0.400 m
+
+--- mlp_ft  (30 group-visit(s)) ----------------------------------
+  within 0.5 m of a slot   : 27/30  (90%)
+  ...AND facing the group : 0/30  (0%)
+  best heading in band    : mean 75.1 deg, median 76.1 deg
+  slot error, mean        : 0.255 m
+  slot error, median      : 0.178 m
+  slot error, best        : 0.006 m
+  slot error, worst       : 2.197 m
+      group 3 (4 people): reached 0/10, mean error 0.148 m
+      group 4 (3 people): reached 0/10, mean error 0.429 m
+      group 5 (5 people): reached 0/10, mean error 0.188 m
+
+--- rule  (30 group-visit(s)) ------------------------------------
+  within 0.5 m of a slot   : 24/30  (80%)
+  ...AND facing the group : 12/30  (40%)
+  best heading in band    : mean 47.8 deg, median 50.4 deg
+  slot error, mean        : 0.479 m
+  slot error, median      : 0.254 m
+  slot error, best        : 0.017 m
+  slot error, worst       : 3.530 m
+      group 3 (4 people): reached 7/10, mean error 0.473 m
+      group 4 (3 people): reached 3/10, mean error 0.487 m
+      group 5 (5 people): reached 2/10, mean error 0.477 m
+
+==============================================================================
+  policy            reached   mean err   median err
+  --------------------------------------------------
+  bc_ft           7/30    23%     0.348m       0.191m
+  mlp_ft          0/30     0%     0.255m       0.178m
+  rule           12/30    40%     0.479m       0.254m
+==============================================================================
+Written: dataset/processed/results_FINAL_20260824/locateanything/approach_accuracy.csv

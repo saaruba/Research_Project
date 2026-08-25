@@ -1,0 +1,4 @@
+policy,runs,task_success,task_success_rate,collision_free,collision_free_rate,ospace_intrusion,ospace_intrusion_rate,cut_through_runs,cut_through_rate,mean_cut_through_events,mean_min_distance_m,mean_path_length_m,mean_navigation_time_s
+bc_ft,10,10,1.0,8,0.8,10,1.0,1,0.1,0.2,0.3165,56.08819999999999,328.707
+mlp_ft,10,9,0.9,10,1.0,8,0.8,0,0.0,0.0,0.41180000000000005,57.8717,373.106
+rule,10,9,0.9,9,0.9,8,0.8,6,0.6,1.4,0.46320000000000006,63.678399999999996,298.44
