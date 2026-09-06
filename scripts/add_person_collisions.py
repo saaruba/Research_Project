@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Give the people in a Gazebo world a body the LiDAR can see.
 

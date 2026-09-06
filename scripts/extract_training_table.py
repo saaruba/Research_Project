@@ -1,11 +1,84 @@
-#!/usr/bin/env python3
 """
-Extract a first training-ready Behavioural Cloning table from one TIAGo dataset session.
+STEP 1 OF THE DATA PIPELINE - turn one raw recording into a table of numbers.
 
-Example:
     cd /workspaces/Research_Project
     python3 scripts/extract_training_table.py --session dataset/1
     python3 scripts/extract_training_table.py --session dataset/3
+
+============================================================================
+IF YOU HAVE NEVER SEEN THIS PROJECT BEFORE, READ THIS FIRST
+============================================================================
+The PLUS-HRI dataset is a set of recordings of a human driving a TIAGo robot
+around a room where people are standing and talking. Each recording ("session")
+is a folder containing several very different kinds of file:
+
+    1.bag                     robot sensors, in ROS 1 bag format
+    1.mp4                     what the robot's camera saw
+    cmd_vel.csv               the joystick commands the human gave
+    detected_people*.csv      where people are in each video frame
+    1_frame_manifest.json     the timestamp of every video frame
+
+A machine-learning model cannot read any of that. It needs one flat table:
+one row per moment in time, every column a number. Producing that table is
+this script's entire job.
+
+============================================================================
+WHAT COMES OUT, AND WHY EACH PIECE MATTERS
+============================================================================
+One CSV per session with a row roughly every 30th of a second:
+
+    timestamp              when this moment happened
+    robot_x, robot_y       where the robot was, in metres
+    robot_yaw              which way it was facing, in radians
+    linear_x, angular_z    how fast it was driving and turning
+    lidar_min_range        distance to the NEAREST obstacle
+    lidar_mean_range       average distance all round - a "how open is this
+                           space" measure
+    num_faces, face_*      what the camera saw
+
+Two of these carry more weight than the rest:
+
+  * robot_x / robot_y / robot_yaw is where the TRAINING TARGET comes from.
+    The thing the model learns to predict is "where did the human stop", and
+    the only record of that is the robot's own odometry. No bag, no answer key.
+
+  * lidar_min_range is used later as a stand-in for "how far away is the
+    group". It is not a true group distance - it is the nearest obstacle in
+    any direction - and that approximation is documented as a limitation
+    throughout the project, because the video is uncalibrated and no real
+    metric distance is recoverable from it.
+
+============================================================================
+THE AWKWARD PARTS, AND WHY THE CODE LOOKS THE WAY IT DOES
+============================================================================
+Three problems make this longer than you would expect:
+
+  1. ROS 1 BAGS ON A ROS 2 MACHINE. The recordings are ROS 1 format; this
+     project runs ROS 2 Humble. Rather than installing ROS 1, the `rosbags`
+     library reads the old format directly, using the ROS1_NOETIC typestore so
+     the message definitions are interpreted correctly.
+
+  2. EVERY SOURCE HAS ITS OWN CLOCK RATE. The bag, the video and the CSVs are
+     each sampled at different rates and none of their timestamps line up.
+     Rows are therefore merged by NEAREST timestamp within a tolerance, not by
+     exact match, which is what merge_asof does below.
+
+  3. TIMESTAMPS COME IN TWO UNITS. Some are seconds, some nanoseconds. They
+     are normalised on the way in - mixing them silently produces times
+     millions of seconds apart and merges that match nothing.
+
+Orientation arrives as a quaternion (four numbers describing a 3-D rotation)
+and is converted to a single yaw angle, since the robot only turns in the
+plane.
+
+============================================================================
+WHERE THIS SITS IN THE PIPELINE
+============================================================================
+    extract_training_table.py     <- YOU ARE HERE, run once per session
+    check_dataset_readiness.py       merges all sessions into one table
+    build_approach_pose_dataset.py   labels which rows are approaches
+    split_dataset.py                 splits into train / val / test
+    train_approach_pose_model.py     trains the model
 """
 
 from __future__ import annotations

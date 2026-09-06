@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Train the "socially aware" Behavioural Cloning model: adds human-position
 features (from facial_landmarks_uniface.csv for sessions 1/3, or

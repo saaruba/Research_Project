@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Scripted patrol mission: drive a fixed tour, observe, then stop and report.
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase H: record the proposal's evaluation metrics during a simulation run.
 

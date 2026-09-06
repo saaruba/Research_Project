@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Run YOLOv8n person detection on sampled frames from a session's video, and
 write detected_people.csv in the same format as the facial-landmark summary

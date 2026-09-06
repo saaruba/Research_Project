@@ -1,13 +1,36 @@
-#!/usr/bin/env python3
 """
-Prepare the six LIRS-HMLG character folders used by restaurant_humans_48_people.world.
+FIX THE 3-D HUMAN MODELS SO GAZEBO CAN DISPLAY THEM.
 
-What it does:
-1. Verifies talk.dae, sit.dae, and walk.dae exist for every selected character.
-2. Creates one .bak copy of each DAE before changing it.
-3. Repairs MakeHuman/LIRS image references that start with /<model-folder>/...
-   so Gazebo can resolve them relative to the DAE file.
-4. Reports any image references that still cannot be resolved.
+    python3 scripts/prepare_lirs_selected_models.py
+
+============================================================================
+WHY THIS IS NEEDED
+============================================================================
+The simulated restaurant is populated with human figures from the LIRS-HMLG
+model library. Each figure is a .dae file (a 3-D mesh) plus separate image
+files for skin, clothing and hair.
+
+The .dae files reference their images with ABSOLUTE paths of the form
+/<model-folder>/textures/skin.png - correct on whatever machine exported them,
+meaningless anywhere else. Gazebo cannot find the images, and the people appear
+as featureless grey or plain white shapes.
+
+Since the perception pipeline detects people from the camera image, featureless
+figures directly degrade detection. This script rewrites those references to be
+relative to the .dae file, so the textures resolve wherever the project is
+cloned.
+
+============================================================================
+WHAT IT DOES, STEP BY STEP
+============================================================================
+1. Checks talk.dae, sit.dae and walk.dae exist for every selected character.
+2. Makes a .bak copy of each .dae BEFORE editing - so a bad run is reversible.
+3. Rewrites the absolute image paths to relative ones.
+4. Reports any reference it still could not resolve, rather than failing
+   silently and leaving you to notice grey people later.
+
+Run it once after cloning, or whenever the human models look untextured in
+Gazebo. Running it twice is harmless; the .bak files are not overwritten.
 
 Run from anywhere:
     python3 /workspaces/Research_Project/scripts/prepare_lirs_selected_models.py

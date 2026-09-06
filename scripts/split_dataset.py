@@ -1,14 +1,45 @@
-#!/usr/bin/env python3
 """
-Split the combined training table into train / validation / test sets,
-splitting by whole session so no session's rows leak across splits.
+SPLIT THE DATA INTO TRAIN / VALIDATION / TEST - by whole session.
+
+    python3 scripts/split_dataset.py
 
 Run this AFTER check_dataset_readiness.py has produced
 dataset/processed/combined_training_table.csv.
 
-Example:
-    cd /workspaces/Research_Project
-    python3 scripts/split_dataset.py
+============================================================================
+WHY SPLITTING MATTERS, IF THIS IS NEW TO YOU
+============================================================================
+A model that is tested on data it was trained on will look excellent and be
+useless, because it can simply memorise. So the data is divided three ways:
+
+    TRAIN       the model learns from these
+    VALIDATION  used to choose settings (how deep a tree, how big a network)
+    TEST        touched ONCE, at the very end, to report the honest result
+
+If the test set is consulted while tuning, its numbers stop being honest -
+choices have then been made to suit it.
+
+============================================================================
+THE IMPORTANT DECISION: SPLIT BY SESSION, NOT BY ROW
+============================================================================
+Rows in this dataset are sampled about 30 times a second, so consecutive rows
+are nearly identical. Splitting randomly by row would put one moment in
+training and the moment 33 milliseconds later in test. The model would score
+brilliantly by recognising almost the same instant twice - a leak that hides a
+total failure to generalise.
+
+Splitting by WHOLE SESSION prevents it. Every row of a session goes to exactly
+one split, so the test set contains rooms, people and lighting the model has
+never encountered. That is a much harder and much more meaningful test, and it
+is why the reported errors are larger than a row-wise split would produce.
+
+    17 sessions -> train        44,190 rows
+     4 sessions -> validation   14,444 rows
+     3 sessions -> test         11,921 rows
+
+Sessions 1 and 3 are forced into TRAIN because they are the only two carrying
+face and gaze annotations - holding one out would remove capability from the
+training set for very little validation gain.
 """
 
 from __future__ import annotations

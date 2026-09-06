@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Build a Nav2 occupancy grid directly FROM a Gazebo .world file.
 

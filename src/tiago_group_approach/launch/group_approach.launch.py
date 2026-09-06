@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase G: the full group-approach pipeline, in one launch.
 

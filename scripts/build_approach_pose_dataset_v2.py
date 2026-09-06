@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 V2 APPROACH-POSE DATASET  (additive - v1 is not modified)
 

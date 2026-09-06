@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 First real test of person detection on your actual video footage, using
 YOLOv8n (a small, fast, pretrained object detector - not trained by us,

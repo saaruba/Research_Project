@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Validate the YOLOv8n detector against real ground truth, to get the actual
 number for your proposal's Objective 2 target: "person-detection recall of

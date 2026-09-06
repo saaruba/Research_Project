@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Check whether the extracted training tables are actually ready to train on.
 

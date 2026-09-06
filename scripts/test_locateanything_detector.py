@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Test person detection using the model actually named in your proposal:
 nvidia/LocateAnything-3B (Wang et al., NVIDIA, 2026).

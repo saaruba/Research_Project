@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Step 2 of the YOLOv8n vs LocateAnything-3B comparison. RUN THIS ON YOUR GPU
 MACHINE, not in the ROS2 devcontainer.

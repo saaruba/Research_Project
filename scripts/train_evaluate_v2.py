@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 TRAIN AND EVALUATE THE V2 MODELS  (additive - no v1 artefact is overwritten)
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Step 1 of the YOLOv8n vs LocateAnything-3B comparison: export a fixed set of
 frames from sessions 1 and 3 (the only two with ground-truth face

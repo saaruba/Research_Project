@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Objective 3, step 1b: extract the 30 validation frames WITHOUT any annotation.
 

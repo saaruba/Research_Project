@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase F: train the MLP (neural network) approach-pose model - this is the
 PRIMARY model per the proposal/supervisor-feedback architecture decision

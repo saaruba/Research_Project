@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 LocateAnything-3B as a local detection SERVICE, so the ROS 2 perception node
 can use it despite an unresolvable Python dependency conflict.

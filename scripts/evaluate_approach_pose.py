@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase H (partial): evaluate and COMPARE all approach-pose policies on the
 held-out test sessions, against the proposal's own Objective 4 thresholds.

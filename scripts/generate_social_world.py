@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Generate a Gazebo Classic world containing conversational groups of people
 standing in F-formations, for the TIAGo group-approach experiments.

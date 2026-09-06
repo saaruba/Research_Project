@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Fold the clicks from label_ospace.html into labels.csv for scoring.
 

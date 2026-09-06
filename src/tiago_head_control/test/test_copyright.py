@@ -1,3 +1,17 @@
+"""
+AUTO-GENERATED ROS 2 STYLE TEST - not written for this project.
+
+`ros2 pkg create` adds three of these to every new Python package
+(test_copyright.py, test_flake8.py, test_pep257.py). They check licence
+headers, Python style and docstring formatting when you run:
+
+    colcon test
+
+They are left in place unmodified because deleting them would make the package
+non-standard for no benefit. Nothing in this project depends on them passing,
+and they play no part in any experiment or result.
+"""
+
 # Copyright 2015 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

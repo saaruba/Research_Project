@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase F: train the actual approach-POSE model - the target your proposal
 evaluates against (x, y, yaw), not raw cmd_vel. Uses the labelled dataset

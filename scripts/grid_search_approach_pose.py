@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Hyper-parameter grid search for both approach-pose models.
 

@@ -1,3 +1,50 @@
+"""
+HEAD SCAN NODE - point TIAGo's head camera where you want it.
+
+============================================================================
+IF YOU HAVE NEVER SEEN THIS PROJECT BEFORE, READ THIS FIRST
+============================================================================
+TIAGo's head is motorised: it can pan (turn left and right) and tilt (look up
+and down). The camera this project relies on for finding people is mounted in
+that head, so where the head points decides what the robot can see.
+
+By default TIAGo's head looks straight ahead and level. That is a poor angle
+for spotting people standing a couple of metres away, because it puts their
+heads at the very top of the frame or out of it entirely. This node moves the
+head to a chosen pan/tilt so the camera is aimed usefully.
+
+It is a SETUP AND DEBUGGING TOOL, not part of the main experiment. The
+group-approach pipeline does not call it. Use it when you want to check what
+the camera sees, or to park the head at a sensible angle before a run.
+
+============================================================================
+HOW IT WORKS
+============================================================================
+Moving a robot joint in ROS 2 is not a matter of setting a variable. You send
+a GOAL to an "action server" - a long-running task the robot accepts, works
+on, and reports back about - and the controller moves the joint smoothly to
+get there.
+
+  1. Connect to the /head_controller/follow_joint_trajectory action server.
+  2. Wait until it is available. If TIAGo is not running, this waits forever
+     rather than failing, which is the usual reason it appears to hang.
+  3. Build a JointTrajectory: the two joint names, the target angles in
+     RADIANS (not degrees), and how long the movement should take.
+  4. Send it and wait for the controller to report completion.
+
+Angles are in radians throughout, because that is what ROS uses. To convert:
+radians = degrees * pi / 180. So -0.6 rad is roughly 34 degrees downward.
+
+============================================================================
+RUN IT
+============================================================================
+    # TIAGo must already be running (Gazebo or the real robot)
+    ros2 run tiago_head_control head_scan_node
+
+If it prints "Waiting for head controller action server..." and never moves
+on, the robot is not running or the controller has not started yet.
+"""
+
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase F/G: the LEARNED policy node. Loads the trained Behavioural Cloning
 model and drives TIAGo to the approach pose it predicts.

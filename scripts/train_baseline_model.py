@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Train a first baseline Behavioural Cloning model.
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase C, final step: given each detected group (detected_groups.csv), compute
 a candidate APPROACH POINT just outside its O-space, facing the group centre.

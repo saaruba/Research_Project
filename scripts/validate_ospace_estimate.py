@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Objective 3 validation, step 2: score the estimated O-space centre against
 your hand-labelled ground truth.

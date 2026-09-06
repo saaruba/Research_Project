@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase F, step 0: build the actual training set for approach-POSE prediction
 (x, y, yaw), instead of raw cmd_vel - this is the target your proposal

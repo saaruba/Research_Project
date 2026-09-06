@@ -1,13 +1,34 @@
 #!/usr/bin/env bash
 # ============================================================================
-# "Why isn't the robot moving?" - checks every link in the chain, in order.
+# "WHY ISN'T THE ROBOT MOVING?" - the diagnostic to run first
 #
 #   bash scripts/preflight_check.sh
 #
-# Run it with the simulation ALREADY RUNNING. Each check corresponds to one
-# thing that must be true for TIAGo to drive to a group. The first FAIL is
-# your problem - later checks often fail simply as a consequence of it, so
-# fix them top-down and re-run.
+# ----------------------------------------------------------------------------
+# WHAT THIS IS FOR, IF YOU ARE NEW TO THE PROJECT
+# ----------------------------------------------------------------------------
+# Getting TIAGo to approach a group needs about a dozen separate things to be
+# working at once: Gazebo running, the robot spawned, the map loaded, the
+# localisation publishing, Nav2 accepting goals, the camera streaming, the
+# perception node detecting, the policy node computing a pose. If ANY ONE of
+# them is missing, the visible symptom is identical - the robot sits still.
+#
+# Debugging that by guesswork is slow and demoralising. This script walks the
+# chain in dependency order and tells you the FIRST link that is broken.
+#
+# ----------------------------------------------------------------------------
+# HOW TO READ THE OUTPUT
+# ----------------------------------------------------------------------------
+# Fix the first FAIL and re-run. Later checks commonly fail only because an
+# earlier one did - for example, if no map is published then localisation
+# cannot work, so Nav2 rejects goals, so the robot does not move. Three FAILs,
+# one cause.
+#
+# Run it with the simulation ALREADY RUNNING in another terminal, otherwise
+# every check fails for the obvious reason.
+#
+#   Terminal 1:  bash scripts/run_everything.sh restaurant_testing rule --no-pipeline
+#   Terminal 2:  bash scripts/preflight_check.sh
 # ============================================================================
 
 set -o pipefail   # NOT 'set -u': ROS setup.bash reads undefined variables

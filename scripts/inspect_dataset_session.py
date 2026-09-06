@@ -1,9 +1,45 @@
-#!/usr/bin/env python3
 """
-Inspect one TIAGo dataset session folder and summarise its contents.
+LOOK INSIDE ONE RECORDING - a read-only survey tool.
 
-Example:
-    python3 scripts/inspect_dataset_session.py --session /workspaces/Research_Project/dataset/1
+    python3 scripts/inspect_dataset_session.py --session dataset/1
+
+============================================================================
+WHY THIS EXISTS
+============================================================================
+Each PLUS-HRI session folder holds a mixture of sensor bags, video, CSVs and
+JSON manifests, and the 24 sessions are NOT consistent with each other. Some
+have gaze tracking, some do not. Some have face annotations, most do not. Some
+record robot pose on one ROS topic, some on another. A few have a file present
+but empty.
+
+Before trusting a session you have to know what is actually in it. This script
+answers that without changing anything: it opens every file, reports what it
+found, how many rows, over what time span, at what rate, and flags anything
+missing or unreadable.
+
+It writes nothing and modifies nothing. Run it as often as you like.
+
+============================================================================
+WHAT IT REPORTS
+============================================================================
+  * which files are present, and their size
+  * for the bag: which topics were recorded, and their message counts
+  * for each CSV: row count, which column holds the timestamp, the start and
+    end times, the duration, and the approximate sampling frequency
+  * empty or corrupt files, called out explicitly rather than passed over
+
+============================================================================
+WHAT IT WAS ACTUALLY USED FOR
+============================================================================
+This is how the project established that only 2 of the 24 sessions carry face
+and gaze annotations, and that gaze_uniface.csv is empty in both. That finding
+shaped the whole methodology: with no orientation ground truth anywhere in the
+dataset, F-formation O-space estimation had to fall back on the mutual-facing
+assumption (O-space centre approximated by the group centroid), which is stated
+as a limitation in the dissertation rather than hidden.
+
+Run it on a session that behaves oddly downstream before assuming the fault is
+in your code - very often the recording itself is missing something.
 """
 
 from __future__ import annotations

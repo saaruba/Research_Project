@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 DOES MORE TRAINING DATA HELP?  (additive - nothing is overwritten)
 

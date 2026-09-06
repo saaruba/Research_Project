@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Start the custom world AND put TIAGo into it - the step that fails with
 PAL's own launch when a custom world is used.

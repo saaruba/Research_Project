@@ -1,3 +1,11 @@
+"""
+AUTO-GENERATED ROS 2 STYLE TEST - not written for this project.
+
+Checks docstring formatting against PEP 257 when you run `colcon test`. Added
+automatically by `ros2 pkg create`; kept unmodified. See test_copyright.py in
+this folder for the fuller note. Not used by any experiment or result.
+"""
+
 # Copyright 2015 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

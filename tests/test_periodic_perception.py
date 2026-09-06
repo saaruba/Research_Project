@@ -1,11 +1,42 @@
-#!/usr/bin/env python3
 # Run from the project root:  python3 tests/test_periodic_perception.py
-"""Exercise periodic_step's threading handoff without ROS.
+"""
+UNIT TEST for the perception node's periodic (threaded) detection mode.
 
-Verifies: (1) the first call dispatches and returns None, (2) calls during a
-slow inference return None rather than blocking or re-dispatching, (3) the
-result is delivered exactly once, carrying the ORIGINAL frame, (4) the next
-look only happens after retrigger_period_s.
+    python3 tests/test_periodic_perception.py
+
+============================================================================
+WHAT IS BEING TESTED AND WHY IT NEEDED A TEST
+============================================================================
+LocateAnything-3B takes seconds per image, while the ROS node that calls it
+must stay responsive - publishing markers, redrawing the annotated camera view
+and answering callbacks throughout. The solution is "periodic mode": inference
+runs on a WORKER THREAD and the result is collected later.
+
+Threaded handoffs are easy to get subtly wrong, and the failure modes are
+nasty: a result delivered twice, a result silently dropped, or the node
+freezing while it waits. None of those show up as an error message - they show
+up as a robot that behaves oddly, hours into an overnight run.
+
+============================================================================
+HOW IT TESTS WITHOUT A ROBOT
+============================================================================
+There is no ROS, no Gazebo and no GPU here. The ROS imports are replaced with
+stubs and a small fake object stands in for the node, exposing only what
+periodic_step actually touches. A sleep imitates the slow model. The real
+scheduling logic is then exercised directly, in under two seconds.
+
+Four properties are checked:
+
+    1. the first call dispatches work and returns immediately
+    2. calls arriving DURING inference do not block and do not re-dispatch
+    3. the result is delivered exactly once, and carries the frame it was
+       computed FROM - not whatever the camera is showing now, which would
+       place detected people where the robot has since moved to
+    4. the next look waits for retrigger_period_s
+
+Point 3 is the one that matters most in practice: transforms are looked up at
+the captured frame's timestamp, so mixing up which frame a detection belongs
+to puts people metres from where they really are.
 """
 import sys, time, types, threading
 sys.path.insert(0, 'src/tiago_group_approach')

@@ -64,3 +64,5 @@ Research_Project_backup_*.tar.gz
 
 # Simulation rosbags - evidence per trial, too large for git
 dataset/processed/sim_bags/
+Submission_Package/
+TIAGo_Group_Approach_Supporting_Materials.zip

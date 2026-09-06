@@ -1,10 +1,40 @@
-#!/usr/bin/env python3
 
 """
-Launch the custom restaurant shell in Gazebo Classic.
+LAUNCH THE RESTAURANT WITH PEOPLE IN IT - the scene, without the robot.
 
-The environment variables below prevent Gazebo Classic rendering and
-model-path problems when running inside the project's Docker/VNC setup.
+    ros2 launch tiago_social_worlds restaurant_humans.launch.py
+
+============================================================================
+WHAT THIS DOES
+============================================================================
+Opens the restaurant room WITH its human figures placed: the conversational
+groups the robot is meant to approach, plus lone individuals acting as
+distractors.
+
+Use it to check the scene itself - are the groups standing in sensible
+formations, are people textured rather than grey, does the camera see them
+clearly. It does not spawn TIAGo, so nothing moves and nothing can go wrong
+with navigation while you are looking.
+
+    restaurant_world.launch.py    room only, fastest to start
+    restaurant_humans.launch.py   room + people  <- THIS FILE
+    scripts/run_everything.sh     room + people + robot + map + Nav2
+
+============================================================================
+ONE THING WORTH KNOWING ABOUT THE PEOPLE
+============================================================================
+Gazebo <actor> elements are VISUAL ONLY - they have no collision geometry, so
+the robot's LiDAR passes straight through them and Nav2 will happily plan a
+path through a person. This project works around it by adding separate
+collision cylinders (see scripts/add_person_collisions.py). If you edit the
+world by hand and people stop being obstacles, that is why.
+
+============================================================================
+THE ENVIRONMENT VARIABLES BELOW
+============================================================================
+This project runs inside a Docker container with a virtual display (VNC).
+Gazebo Classic assumes a real GPU and display; without these settings it
+renders a black window or cannot locate the model files.
 """
 
 import os

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Objective 3 validation, step 1: extract a random sample of frames with the
 estimated O-space centre drawn on them, ready for manual hand-labelling.

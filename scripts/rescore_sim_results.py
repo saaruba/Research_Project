@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Re-score recorded trials against ground truth, without re-running them.
 

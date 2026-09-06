@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FIGURES FOR CHAPTER 5  -  approach accuracy by policy and detector
 
@@ -183,8 +182,8 @@ def fig4_tradeoff(data, out: Path) -> None:
                         textcoords="offset points", xytext=(11, -6),
                         fontsize=8, color="#333333")
 
-    ax.set_xlabel("Position error (m)  →  worse placement")
-    ax.set_ylabel("Orientation error (°)  →  worse facing")
+    ax.set_xlabel("Position error (m)   ->  worse placement")
+    ax.set_ylabel("Orientation error (°)   ->  worse facing")
     ax.set_title("The trade-off: policies that place well do not face well",
                  fontsize=12, pad=12)
     ax.grid(alpha=0.3, linestyle=":")

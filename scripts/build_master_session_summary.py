@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Build one master summary table from all processed session_summary.json files.
 

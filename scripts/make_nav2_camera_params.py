@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Build a Nav2 parameter file that lets the robot see obstacles with its CAMERA.
 

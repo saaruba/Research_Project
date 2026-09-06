@@ -1,3 +1,34 @@
+"""
+PACKAGE INSTALL SCRIPT for tiago_group_approach - required by ROS 2.
+
+============================================================================
+WHAT THIS IS, IN PLAIN TERMS
+============================================================================
+ROS 2 does not run Python files straight from the folder you wrote them in.
+Each package is BUILT and INSTALLED first, into an install/ directory, and it
+is that installed copy the robot actually runs. This file is the recipe for
+that install step: it tells the build system which Python modules exist, which
+extra files (launch files, RViz layouts) to copy across, and which commands to
+create so `ros2 run` can find them.
+
+You almost never run this file yourself. It is invoked by:
+
+    colcon build --packages-select tiago_group_approach
+    source install/setup.bash
+
+============================================================================
+THE TRAP THAT CATCHES EVERYONE
+============================================================================
+Editing a node's .py file changes the SOURCE, not the installed copy. Until
+you re-run colcon build, ROS keeps running the old version - so your change
+appears to do nothing. If a fix seems to have been ignored, that is almost
+always why.
+
+The data_files section below is the other common trip hazard: launch files and
+RViz configs must be listed explicitly or `ros2 launch` cannot find them, and
+the error message does not make the cause obvious.
+"""
+
 import os
 from glob import glob
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 APPROACH-POINT ACCURACY  -  did the robot stand where it should have stood?
 

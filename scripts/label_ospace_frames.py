@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Objective 3, step 1c: hand-label the O-space centre on 30 validation frames.
 

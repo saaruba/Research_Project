@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 DOES USING MORE FRAMES PER SECOND HELP?  (additive - nothing is overwritten)
 

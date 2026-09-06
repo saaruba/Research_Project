@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FULL HYPER-PARAMETER SEARCH  -  run this on the lab PC.
 

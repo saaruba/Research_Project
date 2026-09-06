@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase E: rule-based group-approach baseline.
 

@@ -1,10 +1,32 @@
-#!/usr/bin/env python3
 
 """
-Launch the custom restaurant shell in Gazebo Classic.
+LAUNCH THE EMPTY RESTAURANT IN GAZEBO - no people, no robot.
 
-The environment variables below prevent Gazebo Classic rendering and
-model-path problems when running inside the project's Docker/VNC setup.
+    ros2 launch tiago_social_worlds restaurant_world.launch.py
+
+============================================================================
+WHAT THIS DOES
+============================================================================
+Opens the restaurant room by itself: walls, floor, tables and chairs, and
+nothing else. No humans, no TIAGo.
+
+That makes it the right thing to run when you are working on the ROOM - moving
+furniture, checking the map matches the world, confirming Gazebo renders at
+all - because it starts in seconds and nothing else can be blamed for what you
+see.
+
+For the full scene with people, use restaurant_humans.launch.py. For an actual
+experiment, use scripts/run_everything.sh, which brings up the world, the
+robot, the map, localisation and Nav2 together.
+
+============================================================================
+THE ENVIRONMENT VARIABLES BELOW
+============================================================================
+This project runs inside a Docker container with a virtual display (VNC), not
+on a normal desktop. Gazebo Classic assumes a real GPU and real display, and
+without these variables it either renders a black window or cannot find the
+model files at all. They are set here rather than in your shell so that
+launching always works the same way regardless of which terminal you use.
 """
 
 import os

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase G: LIVE group perception. Turns TIAGo's camera stream into a group
 centroid in the map frame, which the policy nodes consume.

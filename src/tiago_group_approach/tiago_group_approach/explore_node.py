@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Autonomous exploration: patrol the room until people are found.
 

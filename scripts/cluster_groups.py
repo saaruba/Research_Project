@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Phase C, step 1: cluster individually-detected people (from
 detected_people_individual.csv) into candidate GROUPS, per frame.

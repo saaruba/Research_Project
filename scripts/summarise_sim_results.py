@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Aggregate simulation runs into the Objective 4 comparison table.
 

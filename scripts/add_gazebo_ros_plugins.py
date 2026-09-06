@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Add the gazebo_ros system plugins to a world file so TIAGo can actually be
 spawned into it.

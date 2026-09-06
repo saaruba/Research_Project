@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Extract ground-truth person and group positions from a HAND-BUILT Gazebo world.
 
